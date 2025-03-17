@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "701848881897",
+    "project_id": "relieflink-2ad5d",
+    "storage_bucket": "relieflink-2ad5d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701848881897:android:e9d3a3e72c361e67ba7e78",
+        "android_client_info": {
+          "package_name": "com.example.relief_link"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAtlaX1UkZqD6TsD--n0FMl-ZC2youz2n4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

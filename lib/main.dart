@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'constants/colors.dart';
+import 'providers/auth_provider.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/sign_up_screen.dart';
-import 'screens/auth/otp_verification_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
-import 'screens/onboarding/onboarding_screen.dart';
-import 'providers/auth_provider.dart';
+import 'screens/home/home_screen.dart';
+import 'wrapper.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Set status bar style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
     ),
   );
+  
   runApp(const ReliefLinkApp());
 }
 
@@ -78,34 +88,12 @@ class ReliefLinkApp extends StatelessWidget {
           ),
         ),
         initialRoute: '/',
-        onGenerateRoute: (settings) {
-          switch (settings.name) {
-            case '/':
-              return MaterialPageRoute(
-                builder: (_) => const OnboardingScreen(),
-              );
-            case '/auth/signin':
-              return MaterialPageRoute(
-                builder: (_) => const SignInScreen(),
-              );
-            case '/auth/signup':
-              return MaterialPageRoute(
-                builder: (_) => const SignUpScreen(),
-              );
-            case '/auth/forgot-password':
-              return MaterialPageRoute(
-                builder: (_) => ForgotPasswordScreen(),
-              );
-            case '/auth/otp':
-              final email = settings.arguments as String;
-              return MaterialPageRoute(
-                builder: (_) => OtpVerificationScreen(email: email),
-              );
-            default:
-              return MaterialPageRoute(
-                builder: (_) => const OnboardingScreen(),
-              );
-          }
+        routes: {
+          '/': (context) => const Wrapper(),
+          '/auth/signin': (context) => const SignInScreen(),
+          '/auth/signup': (context) => const SignUpScreen(),
+          '/auth/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/home': (context) => const HomeScreen(),
         },
       ),
     );

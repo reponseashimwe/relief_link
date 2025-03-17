@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import '../../constants/colors.dart';
 
 class CustomButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
+  final Widget child;
+  final VoidCallback? onPressed;
   final bool isOutlined;
   final bool isFullWidth;
   final bool isLoading;
 
   const CustomButton({
     Key? key,
-    required this.text,
+    required this.child,
     required this.onPressed,
     this.isOutlined = false,
     this.isFullWidth = true,
@@ -21,6 +21,7 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
+      height: 56,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -29,24 +30,26 @@ class CustomButton extends StatelessWidget {
           side: isOutlined ? BorderSide(color: AppColors.primary) : null,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
+          elevation: isOutlined ? 0 : 1,
         ),
         child: isLoading
             ? const SizedBox(
-                height: 20,
-                width: 20,
+                height: 24,
+                width: 24,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: 2.5,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : Text(
-                text,
+            : DefaultTextStyle(
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
                 ),
+                child: child,
               ),
       ),
     );
