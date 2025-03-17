@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../components/buttons/custom_button.dart';
 import '../../components/form/custom_input.dart';
 import '../../constants/colors.dart';
+import '../../providers/auth_provider.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -16,16 +18,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _handleSignUp() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement sign up logic
-    }
-  }
-
-  void _navigateToSignIn() {
-    Navigator.pop(context);
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -34,15 +26,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  Future<void> _handleSignUp() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final success = await context.read<AuthProvider>().signUp(
+        _nameController.text,
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      if (success && mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    final success = await context.read<AuthProvider>().signInWithGoogle();
+    if (success && mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.text),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
       ),
       body: SafeArea(
@@ -51,18 +68,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const SizedBox(height: 32),
                 const Text(
-                  'Create an Account',
+                  'Create Account 🚀',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: AppColors.text,
                   ),
                 ),
+                const SizedBox(height: 8),
                 const Text(
-                  'Join Relief Link to stay prepared and protected.',
+                  'Join us in making a difference',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textLight,
@@ -114,12 +133,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 const SizedBox(height: 24),
                 CustomButton(
-                  text: 'Sign Up',
-                  onPressed: _handleSignUp,
+                  onPressed: authProvider.isLoading ? null : _handleSignUp,
+                  isLoading: authProvider.isLoading,
+                  child: const Text('Sign Up'),
                 ),
+                if (authProvider.error != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    authProvider.error!,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
                 const SizedBox(height: 24),
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Expanded(child: Divider()),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -132,28 +163,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomButton(
-                        text: 'Google',
-                        onPressed: () {
-                          // TODO: Implement Google sign up
-                        },
-                        isOutlined: true,
-                      ),
+                OutlinedButton.icon(
+                  onPressed: authProvider.isLoading ? null : _handleGoogleSignIn,
+                  icon: Image.asset(
+                    'assets/images/google_logo.png',
+                    height: 24,
+                  ),
+                  label: const Text('Continue with Google'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: CustomButton(
-                        text: 'Apple',
-                        onPressed: () {
-                          // TODO: Implement Apple sign up
-                        },
-                        isOutlined: true,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -164,14 +186,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       style: TextStyle(color: AppColors.textLight),
                     ),
                     TextButton(
-                      onPressed: _navigateToSignIn,
-                      child: const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/auth/signin');
+                      },
+                      child: const Text('Sign In'),
                     ),
                   ],
                 ),
