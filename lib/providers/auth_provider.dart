@@ -2,25 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthProvider extends ChangeNotifier {
+  static const String _authKey = 'is_authenticated';
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  SharedPreferences? _prefs;
   bool _isLoading = false;
   String? _error;
+
+  AuthProvider() {
+    _initPrefs();
+    _auth.authStateChanges().listen((User? user) {
+      _updateAuthStatus(user != null);
+      notifyListeners();
+    });
+  }
+
+  Future<void> _initPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+    notifyListeners();
+  }
+
+  Future<void> _updateAuthStatus(bool isAuth) async {
+    if (_prefs != null) {
+      await _prefs!.setBool(_authKey, isAuth);
+    }
+  }
 
   bool get isLoading => _isLoading;
   String? get error => _error;
   User? get currentUser => _auth.currentUser;
-  bool get isAuthenticated => _auth.currentUser != null;
-
-  // Listen to auth state changes
-  AuthProvider() {
-    _auth.authStateChanges().listen((User? user) {
-      notifyListeners();
-    });
-  }
+  bool get isAuthenticated => _auth.currentUser != null || (_prefs?.getBool(_authKey) == true);
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -81,7 +96,6 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       
-      // Update user profile with name
       await userCredential.user?.updateDisplayName(name);
       
       return true;
@@ -144,26 +158,20 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
 
-      // Begin interactive sign in process
       final GoogleSignInAccount? gUser = await _googleSignIn.signIn();
       if (gUser == null) {
         _setError('Google sign in was cancelled');
         return false;
       }
 
-      // Obtain auth details from request
       final GoogleSignInAuthentication gAuth = await gUser.authentication;
-
-      // Create a new credential for user
       final credential = GoogleAuthProvider.credential(
         accessToken: gAuth.accessToken,
         idToken: gAuth.idToken,
       );
 
-      // Finally, sign in
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       
-      // Save user data to Firestore
       if (userCredential.user != null) {
         await _saveUserToFirestore(userCredential.user!);
       }
@@ -219,5 +227,6 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
+    await _updateAuthStatus(false);
   }
 } 

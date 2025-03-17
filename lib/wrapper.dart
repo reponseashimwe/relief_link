@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/profile/profile_screen.dart';
-import 'screens/emergency/emergency_call_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/community/community_screen.dart';
+import 'screens/emergency/emergency_screen.dart';
+import 'screens/funds/funds_screen.dart';
+import 'screens/profile/profile_screen.dart';
+import 'components/navigation/custom_bottom_nav.dart';
+import 'components/navigation/custom_app_bar.dart';
 
 class Wrapper extends StatefulWidget {
-  const Wrapper({Key? key}) : super(key: key);
+  const Wrapper({super.key});
 
   @override
   State<Wrapper> createState() => _WrapperState();
@@ -18,59 +22,36 @@ class _WrapperState extends State<Wrapper> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Placeholder(), // Community screen
-    const EmergencyCallScreen(),
-    const Placeholder(), // Funds screen
+    const CommunityScreen(),
+    const EmergencyScreen(),
+    const FundsScreen(),
     const ProfileScreen(),
+  ];
+
+  final List<String> _titles = [
+    'Home',
+    'Community',
+    'Emergency',
+    'Funds',
+    'Profile',
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isAuthenticated = context.watch<AuthProvider>().isAuthenticated;
+    final authProvider = Provider.of<AuthProvider>(context);
 
-    if (!isAuthenticated) {
+    if (!authProvider.isAuthenticated) {
       return const SignInScreen();
     }
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      appBar: CustomAppBar(
+        title: _titles[_currentIndex],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
-            label: 'Community',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.phone_outlined),
-            selectedIcon: Icon(Icons.phone),
-            label: 'Emergency',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.volunteer_activism_outlined),
-            selectedIcon: Icon(Icons.volunteer_activism),
-            label: 'Funds',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      body: _screens[_currentIndex],
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
       ),
     );
   }
