@@ -3,26 +3,36 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/app_constants.dart';
 
 class AuthProvider extends ChangeNotifier {
   static const String _authKey = 'is_authenticated';
+  static const String _roleKey = 'user_role';
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   SharedPreferences? _prefs;
   bool _isLoading = false;
   String? _error;
+  String _userRole = UserRole.user;
 
   AuthProvider() {
     _initPrefs();
-    _auth.authStateChanges().listen((User? user) {
-      _updateAuthStatus(user != null);
+    _auth.authStateChanges().listen((User? user) async {
+      if (user != null) {
+        await _updateAuthStatus(true);
+        await _fetchUserRole(user.uid);
+      } else {
+        await _updateAuthStatus(false);
+        _userRole = UserRole.user;
+      }
       notifyListeners();
     });
   }
 
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
+    _userRole = _prefs?.getString(_roleKey) ?? UserRole.user;
     notifyListeners();
   }
 
@@ -32,10 +42,34 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _fetchUserRole(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists && userDoc.data()!.containsKey('role')) {
+        _userRole = userDoc.data()!['role'];
+        if (_prefs != null) {
+          await _prefs!.setString(_roleKey, _userRole);
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error fetching user role: $e');
+    }
+  }
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   User? get currentUser => _auth.currentUser;
+  String get userRole => _userRole;
   bool get isAuthenticated => _auth.currentUser != null || (_prefs?.getBool(_authKey) == true);
+  bool get isEmergencyService => 
+      _userRole == UserRole.ambulance || 
+      _userRole == UserRole.hospital || 
+      _userRole == UserRole.police || 
+      _userRole == UserRole.firefighter || 
+      _userRole == UserRole.electricity || 
+      _userRole == UserRole.hazmat;
+  bool get isAdmin => _userRole == UserRole.admin;
 
   void _setLoading(bool value) {
     _isLoading = value;
@@ -86,7 +120,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signUp(String name, String email, String password) async {
+  Future<bool> signUp(String name, String email, String password, {String role = UserRole.user}) async {
     try {
       _setLoading(true);
       _setError(null);
@@ -97,6 +131,11 @@ class AuthProvider extends ChangeNotifier {
       );
       
       await userCredential.user?.updateDisplayName(name);
+      
+      // Save user data to Firestore
+      if (userCredential.user != null) {
+        await _saveUserToFirestore(userCredential.user!, role);
+      }
       
       return true;
     } on FirebaseAuthException catch (e) {
@@ -173,7 +212,7 @@ class AuthProvider extends ChangeNotifier {
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
       
       if (userCredential.user != null) {
-        await _saveUserToFirestore(userCredential.user!);
+        await _saveUserToFirestore(userCredential.user!, UserRole.user);
       }
 
       return true;
@@ -185,13 +224,19 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveUserToFirestore(User user) async {
+  Future<void> _saveUserToFirestore(User user, String role) async {
     await _firestore.collection('users').doc(user.uid).set({
       'name': user.displayName,
       'email': user.email,
       'photoURL': user.photoURL,
+      'role': role,
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    
+    _userRole = role;
+    if (_prefs != null) {
+      await _prefs!.setString(_roleKey, role);
+    }
   }
 
   Future<void> updateProfile({String? name, String? photoURL}) async {
@@ -228,5 +273,10 @@ class AuthProvider extends ChangeNotifier {
     await _googleSignIn.signOut();
     await _auth.signOut();
     await _updateAuthStatus(false);
+    if (_prefs != null) {
+      await _prefs!.remove(_roleKey);
+    }
+    _userRole = UserRole.user;
+    notifyListeners();
   }
 } 

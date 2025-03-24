@@ -1,93 +1,209 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../providers/auth_provider.dart';
-import '../../constants/colors.dart';
+import '../../providers/auth_provider.dart' as app_provider;
+import '../../providers/theme_provider.dart';
+import '../../components/navigation/custom_app_bar.dart';
+import '../../utils/seed_accounts.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _selectedCategory = 'All';
+  bool _isDeveloperMode = false;
+  int _devModeClickCount = 0;
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().currentUser;
+    final authProvider = Provider.of<app_provider.AuthProvider>(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final user = authProvider.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
+      appBar: CustomAppBar(
+        title: 'Profile',
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              // TODO: Navigate to settings
+              setState(() {
+                _devModeClickCount++;
+                if (_devModeClickCount >= 7) {
+                  _isDeveloperMode = true;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Developer mode activated!'),
+                    ),
+                  );
+                }
+              });
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Header
+            // Profile header
             Container(
               padding: const EdgeInsets.all(16),
-              child: Column(
+              child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: user?.photoURL != null
-                        ? CachedNetworkImageProvider(user!.photoURL!)
-                        : null,
-                    child: user?.photoURL == null
-                        ? const Icon(Icons.person, size: 50)
-                        : null,
+                  if (user?.photoURL != null)
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: CachedNetworkImageProvider(
+                        user!.photoURL!,
+                      ),
+                    )
+                  else
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.grey.shade200,
+                      child: const Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user?.email ?? 'No email provided',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          'Role: ${authProvider.userRole}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    user?.displayName ?? 'User',
-                    style: const TextStyle(
-                      fontSize: 24,
+                ],
+              ),
+            ),
+
+            // Dark/Light mode toggle
+            ListTile(
+              leading: Icon(
+                themeProvider.themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
+              ),
+              title: Text(
+                themeProvider.themeMode == ThemeMode.dark
+                    ? 'Dark Mode'
+                    : 'Light Mode',
+              ),
+              trailing: Switch(
+                value: themeProvider.themeMode == ThemeMode.dark,
+                onChanged: (value) {
+                  themeProvider.toggleTheme();
+                },
+              ),
+            ),
+
+            // Sign out button
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sign Out'),
+              onTap: () {
+                authProvider.signOut();
+              },
+            ),
+
+            if (_isDeveloperMode) ...[
+              const Divider(),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'Developer Options',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('Seed Emergency Accounts'),
+                subtitle: const Text('Create test accounts for services'),
+                onTap: () async {
+                  try {
+                    final seeder = AccountSeeder();
+                    await seeder.seedEmergencyAccounts();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Accounts created successfully!'),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+
+            const Divider(),
+
+            // Categories
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Categories',
+                    style: TextStyle(
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user?.email ?? '',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
+                  const SizedBox(height: 16),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildCategoryChip('All', _selectedCategory == 'All'),
+                        _buildCategoryChip('Donations', _selectedCategory == 'Donations'),
+                        _buildCategoryChip('Volunteer', _selectedCategory == 'Volunteer'),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-            // Category Tabs
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _CategoryTab(
-                    label: 'All',
-                    isSelected: true,
-                    onTap: () {},
-                  ),
-                  _CategoryTab(
-                    label: 'Donations',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                  _CategoryTab(
-                    label: 'Volunteer',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Latest Donations Section
+            // Latest Donations
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -102,33 +218,27 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          // TODO: Navigate to all donations
-                        },
+                        onPressed: () {},
                         child: const Text('See All'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _DonationCard(
-                    title: 'Rebuild Hope After Disaster',
-                    organization: 'By Wecare Health',
-                    target: '\$150,000',
-                    raised: '\$766,950',
-                    daysLeft: 50,
-                    progress: 0.75,
-                    imageUrl: 'assets/images/donation_flood.jpg',
-                    tag: 'Floods',
+                  const _DonationCard(
+                    title: 'Helping Hands for Karen Communities in Australia After Earthquake',
+                    organization: 'Wecare Health',
+                    targetAmount: 200000,
+                    raisedAmount: 16950,
+                    daysLeft: 20,
+                    imageUrl: 'assets/images/earthquake.jpg',
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 24),
-
-            // Last Read Section
+            // Last Read
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -143,18 +253,16 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          // TODO: Navigate to all articles
-                        },
+                        onPressed: () {},
                         child: const Text('See All'),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _LastReadCard(
-                    title: 'The Great East Japan',
+                  const _LastReadCard(
+                    title: 'The Great East Japan Earthquake and Tsunami',
                     category: 'Earthquake',
-                    timeAgo: '5 mins read',
+                    timeToRead: '5 mins read',
                     imageUrl: 'assets/images/earthquake.jpg',
                   ),
                 ],
@@ -165,41 +273,29 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-class _CategoryTab extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CategoryTab({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
+  Widget _buildCategoryChip(String label, bool isSelected) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
       child: InkWell(
-        onTap: onTap,
+        onTap: () {
+          setState(() {
+            _selectedCategory = label;
+          });
+        },
+        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                width: 2,
-              ),
-            ),
+            color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppColors.primary : Colors.grey,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Colors.white : Colors.black,
+              fontWeight: FontWeight.w500,
             ),
-            textAlign: TextAlign.center,
           ),
         ),
       ),
@@ -210,99 +306,81 @@ class _CategoryTab extends StatelessWidget {
 class _DonationCard extends StatelessWidget {
   final String title;
   final String organization;
-  final String target;
-  final String raised;
+  final double targetAmount;
+  final double raisedAmount;
   final int daysLeft;
-  final double progress;
   final String imageUrl;
-  final String tag;
 
   const _DonationCard({
     required this.title,
     required this.organization,
-    required this.target,
-    required this.raised,
+    required this.targetAmount,
+    required this.raisedAmount,
     required this.daysLeft,
-    required this.progress,
     required this.imageUrl,
-    required this.tag,
   });
 
   @override
   Widget build(BuildContext context) {
+    final progress = raisedAmount / targetAmount;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            children: [
-              Image.asset(
-                imageUrl,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-              Positioned(
-                top: 16,
-                left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    tag,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          // Image
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Image.asset(
+              imageUrl,
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
           ),
+
+          // Progress bar
+          Container(
+            height: 6,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: Row(
+              children: [
+                Container(
+                  height: 6,
+                  width: MediaQuery.of(context).size.width * progress * 0.9, // 0.9 to account for padding
+                  color: Colors.green,
+                ),
+              ],
+            ),
+          ),
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  organization,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 16),
+                // Amount
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      raised,
+                      '\$${raisedAmount.toInt()}',
                       style: const TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                        color: Colors.green,
                       ),
                     ),
                     Text(
@@ -313,19 +391,38 @@ class _DonationCard extends StatelessWidget {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-                const SizedBox(height: 4),
+
+                // Title
                 Text(
-                  'Target: $target',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                const SizedBox(height: 4),
+
+                // Organization and target
+                Row(
+                  children: [
+                    Text(
+                      'By $organization',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      ' • Target: \$${targetAmount.toInt()}',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -339,93 +436,84 @@ class _DonationCard extends StatelessWidget {
 class _LastReadCard extends StatelessWidget {
   final String title;
   final String category;
-  final String timeAgo;
+  final String timeToRead;
   final String imageUrl;
 
   const _LastReadCard({
     required this.title,
     required this.category,
-    required this.timeAgo,
+    required this.timeToRead,
     required this.imageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      clipBehavior: Clip.antiAlias,
       child: Row(
         children: [
-          Image.asset(
-            imageUrl,
-            width: 100,
-            height: 100,
-            fit: BoxFit.cover,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
+              imageUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+            ),
           ),
+          const SizedBox(width: 16),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        category,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      category,
-                      style: const TextStyle(
+                    const SizedBox(width: 8),
+                    Text(
+                      'Just Now • $timeToRead',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
                         fontSize: 12,
                       ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        'Just Now',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        ' • ',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        timeAgo,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ],
