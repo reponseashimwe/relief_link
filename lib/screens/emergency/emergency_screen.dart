@@ -1,115 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../../constants/colors.dart';
+import 'package:provider/provider.dart';
+import '../../constants/app_constants.dart';
+import '../../providers/auth_provider.dart' as app_provider;
+import '../../components/navigation/custom_app_bar.dart';
+import 'chat_screen.dart';
 
-class EmergencyScreen extends StatelessWidget {
+class EmergencyScreen extends StatefulWidget {
   const EmergencyScreen({super.key});
 
-  Future<void> _makeCall(String number) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: number,
-    );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      throw 'Could not launch $number';
-    }
-  }
+  @override
+  State<EmergencyScreen> createState() => _EmergencyScreenState();
+}
+
+class _EmergencyScreenState extends State<EmergencyScreen> {
+  String _selectedCategory = 'All Service';
+  final List<String> _categories = [
+    'All Service',
+    'Medical',
+    'Law',
+    'Social',
+    'Danger',
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<app_provider.AuthProvider>(context);
+    
     return Scaffold(
+      appBar: CustomAppBar(
+        title: 'Emergency Call',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // SOS Banner
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'SOS',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Find Various Emergency Calls',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '20+ Emergency Calls',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Image.asset(
-                    'assets/images/emergency_call.png',
-                    height: 80,
-                  ),
-                ],
-              ),
-            ),
-
+            _buildSOSBanner(),
+            
             // Category Filter
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _CategoryChip(
-                    label: 'All Service',
-                    isSelected: true,
-                    onTap: () {},
-                  ),
-                  _CategoryChip(
-                    label: 'Medical',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                  _CategoryChip(
-                    label: 'Law',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                  _CategoryChip(
-                    label: 'Social',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                  _CategoryChip(
-                    label: 'Danger',
-                    isSelected: false,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
+            _buildCategoryFilter(),
+            
+            const SizedBox(height: 16),
+            
             // Emergency Services Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -119,49 +57,105 @@ class EmergencyScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
-                childAspectRatio: 1.1,
-                children: [
-                  _EmergencyServiceCard(
-                    icon: Icons.local_hospital,
-                    title: 'Hospital',
-                    color: Colors.red.shade100,
-                    onTap: () => _makeCall('911'),
-                  ),
-                  _EmergencyServiceCard(
-                    icon: Icons.local_police,
-                    title: 'Police',
-                    color: Colors.blue.shade100,
-                    onTap: () => _makeCall('911'),
-                  ),
-                  _EmergencyServiceCard(
-                    icon: Icons.fire_truck,
-                    title: 'Fire Fighter',
-                    color: Colors.orange.shade100,
-                    onTap: () => _makeCall('911'),
-                  ),
-                  _EmergencyServiceCard(
-                    icon: Icons.engineering,
-                    title: 'Electricity',
-                    color: Colors.yellow.shade100,
-                    onTap: () => _makeCall('800-4357'),
-                  ),
-                  _EmergencyServiceCard(
-                    icon: Icons.masks,
-                    title: 'HazMat Teams',
-                    color: Colors.purple.shade100,
-                    onTap: () => _makeCall('800-424-8802'),
-                  ),
-                  _EmergencyServiceCard(
-                    icon: Icons.local_hospital_outlined,
-                    title: 'Ambulance',
-                    color: Colors.red.shade100,
-                    onTap: () => _makeCall('911'),
-                  ),
-                ],
+                childAspectRatio: 1.2,
+                children: EmergencyService.services.map((service) {
+                  return _EmergencyServiceCard(
+                    service: service,
+                    onTap: () {
+                      if (authProvider.isAuthenticated) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              service: service,
+                            ),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please sign in to use this service'),
+                          ),
+                        );
+                      }
+                    },
+                  );
+                }).toList(),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSOSBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.indigo.shade900,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'SOS',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Find Various Emergency Calls',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '20+ Emergency Calls',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Image.asset(
+            'assets/images/emergency_call.png',
+            height: 80,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilter() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: _categories.map((category) {
+          return _CategoryChip(
+            label: category,
+            isSelected: _selectedCategory == category,
+            onTap: () {
+              setState(() {
+                _selectedCategory = category;
+              });
+            },
+          );
+        }).toList(),
       ),
     );
   }
@@ -188,7 +182,7 @@ class _CategoryChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.grey.shade200,
+            color: isSelected ? Colors.green : Colors.grey.shade200,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -205,15 +199,11 @@ class _CategoryChip extends StatelessWidget {
 }
 
 class _EmergencyServiceCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color color;
+  final EmergencyService service;
   final VoidCallback onTap;
 
   const _EmergencyServiceCard({
-    required this.icon,
-    required this.title,
-    required this.color,
+    required this.service,
     required this.onTap,
   });
 
@@ -232,21 +222,14 @@ class _EmergencyServiceCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 32,
-                color: color.withOpacity(0.8),
-              ),
+            Image.asset(
+              service.iconAsset,
+              height: 48,
+              width: 48,
             ),
             const SizedBox(height: 12),
             Text(
-              title,
+              service.name,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,

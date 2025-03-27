@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(
+//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if true;  // Allow all operations without authentication
+      
+      // CORS configuration
+      function corsHeaders() {
+        return {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Max-Age': '3600',
+          'Access-Control-Allow-Credentials': 'true'
+        }
+      }
+      
+      // Allow OPTIONS requests for CORS preflight
+      allow options: if true;
+    }
+  }
+}
