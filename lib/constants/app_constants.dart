@@ -1,41 +1,88 @@
-class DisasterCategory {
-  final String id;
-  final String name;
-  final String imageUrl;
+import 'package:flutter/material.dart';
 
-  const DisasterCategory({
-    required this.id,
-    required this.name,
-    required this.imageUrl,
-  });
+// Disaster Categories
+enum DisasterCategory {
+  earthquake('Earthquake'),
+  flood('Flood'),
+  fire('Fire'),
+  hurricane('Hurricane'),
+  tornado('Tornado'),
+  landslide('Landslide'),
+  tsunami('Tsunami'),
+  drought('Drought'),
+  other('Other');
 
-  static const List<DisasterCategory> categories = [
-    DisasterCategory(
-      id: 'earthquake',
-      name: 'Earthquake',
-      imageUrl: 'assets/images/earthquake.jpg',
-    ),
-    DisasterCategory(
-      id: 'flood',
-      name: 'Flood',
-      imageUrl: 'assets/images/flood.jpg',
-    ),
-    DisasterCategory(
-      id: 'wildfire',
-      name: 'Wildfire',
-      imageUrl: 'assets/images/wildfire.jpg',
-    ),
-    DisasterCategory(
-      id: 'hurricane',
-      name: 'Hurricane',
-      imageUrl: 'assets/images/hurricane.jpg',
-    ),
-    DisasterCategory(
-      id: 'drought',
-      name: 'Drought',
-      imageUrl: 'assets/images/drought.jpg',
-    ),
-  ];
+  final String label;
+  const DisasterCategory(this.label);
+
+  String get name => label;
+}
+
+// Emergency Service Types
+enum EmergencyServiceType {
+  medical('Medical'),
+  police('Police'),
+  fire('Fire'),
+  rescue('Rescue'),
+  hazmat('Hazmat'),
+  social('Social Services');
+
+  final String label;
+  const EmergencyServiceType(this.label);
+
+  String get name => label;
+}
+
+// User Roles
+enum UserRole {
+  user('User'),
+  admin('Admin'),
+  emergencyService('Emergency Service');
+
+  final String label;
+  const UserRole(this.label);
+
+  String get name => label;
+}
+
+// App Colors
+class AppColors {
+  static const Color primary = Color(0xFF1A73E8);
+  static const Color secondary = Color(0xFF34A853);
+  static const Color error = Color(0xFFEA4335);
+  static const Color warning = Color(0xFFFBBC04);
+  static const Color success = Color(0xFF34A853);
+  static const Color background = Color(0xFFF8F9FA);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const Color onSecondary = Color(0xFFFFFFFF);
+  static const Color onBackground = Color(0xFF202124);
+  static const Color onSurface = Color(0xFF202124);
+}
+
+// API Keys and Endpoints
+class ApiConfig {
+  static const String cloudinaryCloudName = 'dxeepn9qa';
+  static const String cloudinaryApiKey = '396133459978945';
+  static const String cloudinaryApiSecret = 'lij0YD3ThmYd_dPkBwpfSAplWxk';
+  static const String cloudinaryUploadPreset = 'ml_default';
+}
+
+// Collection Names
+class Collections {
+  static const String users = 'users';
+  static const String disasters = 'disasters';
+  static const String emergencyServices = 'emergency_services';
+  static const String chats = 'chats';
+  static const String messages = 'messages';
+}
+
+// Storage Keys
+class StorageKeys {
+  static const String themeMode = 'theme_mode';
+  static const String userRole = 'user_role';
+  static const String authToken = 'auth_token';
+  static const String userId = 'user_id';
 }
 
 class Location {
@@ -145,15 +192,4 @@ class EmergencyService {
       description: 'Hazardous Materials Response',
     ),
   ];
-}
-
-class UserRole {
-  static const String user = 'user';
-  static const String admin = 'admin';
-  static const String ambulance = 'ambulance';
-  static const String hospital = 'hospital';
-  static const String police = 'police';
-  static const String firefighter = 'firefighter';
-  static const String electricity = 'electricity';
-  static const String hazmat = 'hazmat';
 } 

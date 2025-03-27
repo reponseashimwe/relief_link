@@ -14,61 +14,59 @@ class AuthProvider extends ChangeNotifier {
   SharedPreferences? _prefs;
   bool _isLoading = false;
   String? _error;
-  String _userRole = UserRole.user;
+  User? _user;
+  UserRole _userRole = UserRole.user;
 
   AuthProvider() {
-    _initPrefs();
+    _init();
+  }
+
+  Future<void> _init() async {
+    _prefs = await SharedPreferences.getInstance();
     _auth.authStateChanges().listen((User? user) async {
-      if (user != null) {
-        await _updateAuthStatus(true);
-        await _fetchUserRole(user.uid);
-      } else {
-        await _updateAuthStatus(false);
+      _user = user;
+      if (user == null) {
         _userRole = UserRole.user;
+      } else {
+        await _fetchUserRole();
       }
       notifyListeners();
     });
   }
 
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-    _userRole = _prefs?.getString(_roleKey) ?? UserRole.user;
-    notifyListeners();
-  }
-
-  Future<void> _updateAuthStatus(bool isAuth) async {
-    if (_prefs != null) {
-      await _prefs!.setBool(_authKey, isAuth);
-    }
-  }
-
-  Future<void> _fetchUserRole(String userId) async {
+  Future<void> _fetchUserRole() async {
     try {
-      final userDoc = await _firestore.collection('users').doc(userId).get();
-      if (userDoc.exists && userDoc.data()!.containsKey('role')) {
-        _userRole = userDoc.data()!['role'];
-        if (_prefs != null) {
-          await _prefs!.setString(_roleKey, _userRole);
+      final roleStr = _prefs?.getString(_roleKey);
+      if (roleStr != null) {
+        _userRole = UserRole.values.firstWhere(
+          (role) => role.name == roleStr,
+          orElse: () => UserRole.user,
+        );
+      } else {
+        final userDoc = await _firestore.collection('users').doc(_user!.uid).get();
+        if (userDoc.exists) {
+          final roleStr = userDoc.data()?['role'] as String?;
+          if (roleStr != null) {
+            _userRole = UserRole.values.firstWhere(
+              (role) => role.name == roleStr,
+              orElse: () => UserRole.user,
+            );
+            await _prefs?.setString(_roleKey, _userRole.name);
+          }
         }
-        notifyListeners();
       }
     } catch (e) {
-      print('Error fetching user role: $e');
+      debugPrint('Error fetching user role: $e');
+      _userRole = UserRole.user;
     }
   }
 
   bool get isLoading => _isLoading;
   String? get error => _error;
-  User? get currentUser => _auth.currentUser;
-  String get userRole => _userRole;
-  bool get isAuthenticated => _auth.currentUser != null || (_prefs?.getBool(_authKey) == true);
-  bool get isEmergencyService => 
-      _userRole == UserRole.ambulance || 
-      _userRole == UserRole.hospital || 
-      _userRole == UserRole.police || 
-      _userRole == UserRole.firefighter || 
-      _userRole == UserRole.electricity || 
-      _userRole == UserRole.hazmat;
+  User? get currentUser => _user;
+  UserRole get userRole => _userRole;
+  bool get isAuthenticated => _user != null;
+  bool get isEmergencyService => _userRole == UserRole.emergencyService;
   bool get isAdmin => _userRole == UserRole.admin;
 
   void _setLoading(bool value) {
@@ -86,31 +84,15 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
       
-      await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       
-      return true;
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = 'An error occurred';
-      
-      switch (e.code) {
-        case 'user-not-found':
-          errorMessage = 'No user found with this email';
-          break;
-        case 'wrong-password':
-          errorMessage = 'Wrong password provided';
-          break;
-        case 'invalid-email':
-          errorMessage = 'Invalid email address';
-          break;
-        case 'user-disabled':
-          errorMessage = 'This account has been disabled';
-          break;
+      if (userCredential.user != null) {
+        await _fetchUserRole();
+        return true;
       }
-      
-      _setError(errorMessage);
       return false;
     } catch (e) {
       _setError(e.toString());
@@ -120,7 +102,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signUp(String name, String email, String password, {String role = UserRole.user}) async {
+  Future<bool> signUp(String name, String email, String password, {UserRole role = UserRole.user}) async {
     try {
       _setLoading(true);
       _setError(null);
@@ -130,14 +112,14 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       
-      await userCredential.user?.updateDisplayName(name);
-      
-      // Save user data to Firestore
       if (userCredential.user != null) {
+        await userCredential.user!.updateDisplayName(name);
         await _saveUserToFirestore(userCredential.user!, role);
+        _userRole = role;
+        await _prefs?.setString(_roleKey, role.name);
+        return true;
       }
-      
-      return true;
+      return false;
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'An error occurred';
       
@@ -224,18 +206,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveUserToFirestore(User user, String role) async {
+  Future<void> _saveUserToFirestore(User user, UserRole role) async {
     await _firestore.collection('users').doc(user.uid).set({
       'name': user.displayName,
       'email': user.email,
       'photoURL': user.photoURL,
-      'role': role,
-      'lastUpdated': FieldValue.serverTimestamp(),
+      'role': role.name,
+      'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     
     _userRole = role;
     if (_prefs != null) {
-      await _prefs!.setString(_roleKey, role);
+      await _prefs!.setString(_roleKey, role.name);
     }
   }
 
@@ -278,5 +260,11 @@ class AuthProvider extends ChangeNotifier {
     }
     _userRole = UserRole.user;
     notifyListeners();
+  }
+
+  Future<void> _updateAuthStatus(bool isAuth) async {
+    if (_prefs != null) {
+      await _prefs!.setBool(_authKey, isAuth);
+    }
   }
 } 

@@ -18,12 +18,15 @@
 
     <meta charset="UTF-8" />
     <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
-    <meta name="description" content="A new Flutter project." />
+    <meta
+      name="description"
+      content="A disaster relief and emergency services app."
+    />
 
     <!-- iOS meta tags & icons -->
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="apple-mobile-web-app-title" content="relief_link" />
+    <meta name="apple-mobile-web-app-title" content="ReliefLink" />
     <link rel="apple-touch-icon" href="icons/Icon-192.png" />
 
     <!-- Favicon -->
@@ -35,33 +38,78 @@
       content="701848881897-fe9gnp50e5vk0b6431f9d0qbivga3f0r.apps.googleusercontent.com"
     />
 
-    <title>relief_link</title>
+    <!-- Google Maps JavaScript API -->
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa1Qq2Lnwi3Rf0HK8wqEhGP013x0ZD2VY"
+    ></script>
+
+    <title>ReliefLink</title>
     <link rel="manifest" href="manifest.json" />
 
     <!-- Firebase configuration -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <script>
       // Your web app's Firebase configuration
       const firebaseConfig = {
         apiKey: "AIzaSyBrkSMwrPO6Denv_oMoBQIUIEqG5KbZeII",
         authDomain: "relieflink-2ad5d.firebaseapp.com",
         projectId: "relieflink-2ad5d",
-        storageBucket: "relieflink-2ad5d.firebasestorage.app",
+        storageBucket: "relieflink-2ad5d.appspot.com",
         messagingSenderId: "701848881897",
         appId: "1:701848881897:web:f2f9b4b52db732d6ba7e78",
       };
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
     </script>
+    <script>
+      // The value below is injected by flutter build, do not touch.
+      const serviceWorkerVersion = "{{flutter_service_worker_version}}";
+    </script>
+    <!-- This script adds the flutter initialization JS code -->
     <script src="flutter.js" defer></script>
   </head>
   <body>
+    <div id="loading">
+      <style>
+        body {
+          inset: 0;
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
+          position: fixed;
+        }
+        #loading {
+          align-items: center;
+          display: flex;
+          height: 100%;
+          justify-content: center;
+          width: 100%;
+        }
+        #loading img {
+          animation: 1s ease-in-out 0s infinite alternate breathe;
+          opacity: 0.66;
+          transition: opacity 0.4s;
+        }
+        #loading.main_done img {
+          opacity: 1;
+        }
+        @keyframes breathe {
+          from {
+            transform: scale(1);
+          }
+          to {
+            transform: scale(0.95);
+          }
+        }
+      </style>
+      <img src="icons/Icon-192.png" alt="Loading indicator..." />
+    </div>
     <script>
-      window.addEventListener("load", function (ev) {
-        // Define serviceWorkerVersion if not defined
-        var serviceWorkerVersion = null;
-
+      window.addEventListener("load", function () {
         // Download main.dart.js
         _flutter.loader.loadEntrypoint({
           serviceWorker: {

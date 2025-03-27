@@ -17,6 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _selectedCategory = 'All';
   bool _isDeveloperMode = false;
   int _devModeClickCount = 0;
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -150,22 +151,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text('Seed Emergency Accounts'),
                 subtitle: const Text('Create test accounts for services'),
                 onTap: () async {
-                  try {
-                    final seeder = AccountSeeder();
-                    await seeder.seedEmergencyAccounts();
-                    if (mounted) {
+                  if (_devModeClickCount >= 7) {
+                    setState(() => _isLoading = true);
+                    try {
+                      await AccountSeeder.seedEmergencyAccounts();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Accounts created successfully!'),
+                          content: Text('Developer accounts created successfully'),
+                          backgroundColor: Colors.green,
                         ),
                       );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error creating accounts: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    } finally {
+                      setState(() => _isLoading = false);
                     }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: $e'),
-                      ),
-                    );
+                    _devModeClickCount = 0;
                   }
                 },
               ),

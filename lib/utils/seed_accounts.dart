@@ -5,102 +5,101 @@ import '../constants/app_constants.dart';
 /// This class is used to seed initial user accounts for testing.
 /// It should only be used in development environments.
 class AccountSeeder {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   /// Seed emergency service accounts
-  Future<void> seedEmergencyAccounts() async {
+  static Future<void> seedEmergencyAccounts() async {
+    // Admin account
     await _createUserIfNotExists(
       email: 'admin@relieflink.com',
-      password: 'Admin123!',
-      name: 'Admin',
+      password: 'admin123',
+      name: 'Admin User',
       role: UserRole.admin,
     );
-    
+
+    // Emergency service accounts
     await _createUserIfNotExists(
-      email: 'ambulance@relieflink.com',
-      password: 'Ambulance123!',
-      name: 'Ambulance Service',
-      role: UserRole.ambulance,
+      email: 'medical@relieflink.com',
+      password: 'medical123',
+      name: 'Medical Services',
+      role: UserRole.emergencyService,
     );
-    
-    await _createUserIfNotExists(
-      email: 'hospital@relieflink.com',
-      password: 'Hospital123!',
-      name: 'Hospital Service',
-      role: UserRole.hospital,
-    );
-    
+
     await _createUserIfNotExists(
       email: 'police@relieflink.com',
-      password: 'Police123!',
+      password: 'police123',
       name: 'Police Department',
-      role: UserRole.police,
+      role: UserRole.emergencyService,
     );
-    
+
     await _createUserIfNotExists(
-      email: 'firefighter@relieflink.com',
-      password: 'Fire123!',
+      email: 'fire@relieflink.com',
+      password: 'fire123',
       name: 'Fire Department',
-      role: UserRole.firefighter,
+      role: UserRole.emergencyService,
     );
-    
+
     await _createUserIfNotExists(
-      email: 'electricity@relieflink.com',
-      password: 'Electric123!',
-      name: 'Electricity Service',
-      role: UserRole.electricity,
+      email: 'rescue@relieflink.com',
+      password: 'rescue123',
+      name: 'Rescue Team',
+      role: UserRole.emergencyService,
     );
-    
+
     await _createUserIfNotExists(
       email: 'hazmat@relieflink.com',
-      password: 'Hazmat123!',
+      password: 'hazmat123',
       name: 'HazMat Team',
-      role: UserRole.hazmat,
+      role: UserRole.emergencyService,
     );
-    
+
+    // Regular user account
     await _createUserIfNotExists(
       email: 'user@relieflink.com',
-      password: 'User123!',
+      password: 'user123',
       name: 'Regular User',
       role: UserRole.user,
     );
   }
   
-  Future<void> _createUserIfNotExists({
+  static Future<void> _createUserIfNotExists({
     required String email,
     required String password,
     required String name,
-    required String role,
+    required UserRole role,
   }) async {
     try {
-      // Check if user already exists
-      final result = await _auth.fetchSignInMethodsForEmail(email);
-      if (result.isNotEmpty) {
-        print('User $email already exists');
-        return;
+      // Check if user exists
+      final userDoc = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (userDoc.docs.isEmpty) {
+        // Create new user
+        final userCredential = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        await userCredential.user?.updateDisplayName(name);
+
+        // Save user data to Firestore
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'name': name,
+          'email': email,
+          'role': role.name,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        print('Created account for $email with role ${role.name}');
+      } else {
+        print('Account already exists for $email');
       }
-      
-      // Create user
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      // Update display name
-      await userCredential.user?.updateDisplayName(name);
-      
-      // Save to Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'name': name,
-        'email': email,
-        'role': role,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      
-      print('Created user $email with role $role');
     } catch (e) {
-      print('Error creating user $email: $e');
+      print('Error creating account for $email: $e');
     }
   }
 }
