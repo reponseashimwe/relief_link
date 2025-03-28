@@ -44,20 +44,7 @@ class _WrapperState extends State<Wrapper> {
       const ProfileScreen(),
     ];
 
-    final List<String> _titles = [
-      'Home',
-      'Community',
-      'Emergency',
-      'Funds',
-      'Profile',
-    ];
-
     return Scaffold(
-      appBar: _currentIndex == 0 
-          ? null // Home screen has its own app bar
-          : CustomAppBar(
-              title: _titles[_currentIndex],
-            ),
       body: _screens[_currentIndex],
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _currentIndex,
@@ -65,4 +52,4 @@ class _WrapperState extends State<Wrapper> {
       ),
     );
   }
-} 
+}

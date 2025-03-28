@@ -18,7 +18,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // Initialize Google Maps
   if (defaultTargetPlatform == TargetPlatform.android) {
     AndroidGoogleMapsFlutter.useAndroidViewSurface = true;
@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           final ThemeData baseTheme = ThemeData(
-        useMaterial3: true,
+            useMaterial3: true,
             fontFamily: 'Poppins',
           );
 
@@ -83,8 +83,8 @@ class MyApp extends StatelessWidget {
               '/': (context) => const Wrapper(),
               '/auth/signin': (context) => const SignInScreen(),
               '/auth/signup': (context) => const SignUpScreen(),
-              '/auth/forgot-password': (context) => const ForgotPasswordScreen(),
-              '/home': (context) => const HomeScreen(),
+              '/auth/forgot-password': (context) =>
+                  const ForgotPasswordScreen(),
             },
           );
         },
