@@ -103,8 +103,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const SizedBox(height: 32),
                   CustomButton(
-                    text: 'Get Started',
                     onPressed: _navigateToAuth,
+                    child: const Text('Get Started'),
                   ),
                 ],
               ),

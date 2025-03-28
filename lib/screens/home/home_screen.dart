@@ -12,7 +12,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
-    
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -100,7 +100,8 @@ class HomeScreen extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -262,15 +263,15 @@ class HomeScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       _LiveNewsCard(
-                        imageUrl: 'https://example.com/news1.jpg',
+                        icon: Icons.newspaper,
                         views: '14K',
                       ),
                       _LiveNewsCard(
-                        imageUrl: 'https://example.com/news2.jpg',
+                        icon: Icons.article,
                         views: '18K',
                       ),
                       _LiveNewsCard(
-                        imageUrl: 'https://example.com/news3.jpg',
+                        icon: Icons.feed,
                         views: '21K',
                       ),
                     ],
@@ -335,11 +336,11 @@ class _TimeFilterChip extends StatelessWidget {
 }
 
 class _LiveNewsCard extends StatelessWidget {
-  final String imageUrl;
+  final IconData icon;
   final String views;
 
   const _LiveNewsCard({
-    required this.imageUrl,
+    required this.icon,
     required this.views,
   });
 
@@ -350,14 +351,18 @@ class _LiveNewsCard extends StatelessWidget {
       height: 120,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
+        color: Colors.grey[200],
         borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: CachedNetworkImageProvider(imageUrl),
-          fit: BoxFit.cover,
-        ),
       ),
       child: Stack(
         children: [
+          Center(
+            child: Icon(
+              icon,
+              size: 48,
+              color: Colors.grey[600],
+            ),
+          ),
           Positioned(
             top: 8,
             left: 8,
@@ -390,4 +395,4 @@ class _LiveNewsCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

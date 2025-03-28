@@ -25,7 +25,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<app_provider.AuthProvider>(context);
-    
+
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Emergency Call',
@@ -42,12 +42,12 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
           children: [
             // SOS Banner
             _buildSOSBanner(),
-            
+
             // Category Filter
             _buildCategoryFilter(),
-            
+
             const SizedBox(height: 16),
-            
+
             // Emergency Services Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -222,10 +222,10 @@ class _EmergencyServiceCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              service.iconAsset,
-              height: 48,
-              width: 48,
+            Icon(
+              service.icon,
+              size: 48,
+              color: Theme.of(context).primaryColor,
             ),
             const SizedBox(height: 12),
             Text(

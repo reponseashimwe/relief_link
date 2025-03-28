@@ -10,8 +10,6 @@ import 'wrapper.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/sign_up_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/disaster/post_disaster_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

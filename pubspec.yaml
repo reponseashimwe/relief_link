@@ -51,6 +51,7 @@ dependencies:
   intl: ^0.18.1
   path: ^1.8.3
   uuid: ^4.2.2
+  cloudinary_public: ^0.23.1
 
 dev_dependencies:
   flutter_test:

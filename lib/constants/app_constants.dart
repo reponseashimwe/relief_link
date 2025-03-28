@@ -128,7 +128,8 @@ class Location {
 class EmergencyService {
   final String id;
   final String name;
-  final String iconAsset;
+  final IconData icon;
+  final String? iconAsset;
   final String phoneNumber;
   final String role;
   final String description;
@@ -136,7 +137,8 @@ class EmergencyService {
   const EmergencyService({
     required this.id,
     required this.name,
-    required this.iconAsset,
+    required this.icon,
+    this.iconAsset,
     required this.phoneNumber,
     required this.role,
     required this.description,
@@ -146,7 +148,7 @@ class EmergencyService {
     EmergencyService(
       id: 'ambulance',
       name: 'Ambulance',
-      iconAsset: 'assets/images/ambulance_icon.png',
+      icon: Icons.local_hospital,
       phoneNumber: '911',
       role: 'ambulance',
       description: 'Emergency Medical Services',
@@ -154,7 +156,7 @@ class EmergencyService {
     EmergencyService(
       id: 'hospital',
       name: 'Hospital',
-      iconAsset: 'assets/images/hospital_icon.png',
+      icon: Icons.medical_services,
       phoneNumber: '911',
       role: 'hospital',
       description: 'Medical Facility',
@@ -162,7 +164,7 @@ class EmergencyService {
     EmergencyService(
       id: 'police',
       name: 'Police',
-      iconAsset: 'assets/images/police_icon.png',
+      icon: Icons.local_police,
       phoneNumber: '911',
       role: 'police',
       description: 'Law Enforcement',
@@ -170,7 +172,7 @@ class EmergencyService {
     EmergencyService(
       id: 'firefighter',
       name: 'Firefighter',
-      iconAsset: 'assets/images/firefighter_icon.png',
+      icon: Icons.fire_truck,
       phoneNumber: '911',
       role: 'firefighter',
       description: 'Fire Department',
@@ -178,7 +180,7 @@ class EmergencyService {
     EmergencyService(
       id: 'electricity',
       name: 'Electricity',
-      iconAsset: 'assets/images/electricity_icon.png',
+      icon: Icons.electrical_services,
       phoneNumber: '800-4357',
       role: 'electricity',
       description: 'Power Emergency Services',
@@ -186,10 +188,10 @@ class EmergencyService {
     EmergencyService(
       id: 'hazmat',
       name: 'HazMat Teams',
-      iconAsset: 'assets/images/hazmat_icon.png',
+      icon: Icons.warning_amber,
       phoneNumber: '800-424-8802',
       role: 'hazmat',
       description: 'Hazardous Materials Response',
     ),
   ];
-} 
+}

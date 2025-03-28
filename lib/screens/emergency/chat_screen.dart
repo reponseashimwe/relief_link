@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
-import '../../providers/auth_provider.dart' as app_provider;
 
 class ChatScreen extends StatefulWidget {
   final EmergencyService service;
-  
+
   const ChatScreen({
     super.key,
     required this.service,
@@ -43,13 +41,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final userId = _auth.currentUser!.uid;
     final serviceId = widget.service.id;
-    
+
     // Create a unique chat ID by combining user and service IDs
     _chatId = 'chat_${userId}_$serviceId';
-    
+
     // Check if chat already exists
     final chatDoc = await _firestore.collection('chats').doc(_chatId).get();
-    
+
     if (!chatDoc.exists) {
       // Create a new chat
       await _firestore.collection('chats').doc(_chatId).set({
@@ -64,7 +62,7 @@ class _ChatScreenState extends State<ChatScreen> {
         'resolved': false,
       });
     }
-    
+
     setState(() {
       _isLoading = false;
     });
@@ -72,18 +70,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
-    
+
     final text = _messageController.text.trim();
     _messageController.clear();
-    
-    await _firestore.collection('chats').doc(_chatId).collection('messages').add({
+
+    await _firestore
+        .collection('chats')
+        .doc(_chatId)
+        .collection('messages')
+        .add({
       'text': text,
       'senderId': _auth.currentUser!.uid,
       'senderName': _auth.currentUser!.displayName ?? 'User',
       'isUser': true,
       'timestamp': FieldValue.serverTimestamp(),
     });
-    
+
     await _firestore.collection('chats').doc(_chatId).update({
       'lastMessage': text,
       'lastMessageTime': FieldValue.serverTimestamp(),
@@ -106,10 +108,10 @@ class _ChatScreenState extends State<ChatScreen> {
             CircleAvatar(
               backgroundColor: Colors.green.shade100,
               radius: 20,
-              child: Image.asset(
-                widget.service.iconAsset,
-                height: 24,
-                width: 24,
+              child: Icon(
+                widget.service.icon,
+                size: 24,
+                color: Colors.green.shade700,
               ),
             ),
             const SizedBox(width: 12),
@@ -166,13 +168,14 @@ class _ChatScreenState extends State<ChatScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      
+
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                         return const Center(
-                          child: Text('No messages yet. Start the conversation!'),
+                          child:
+                              Text('No messages yet. Start the conversation!'),
                         );
                       }
-                      
+
                       return ListView.builder(
                         reverse: true,
                         padding: const EdgeInsets.all(16),
@@ -181,13 +184,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           final message = snapshot.data!.docs[index];
                           final isUser = message['isUser'] ?? false;
                           final timestamp = message['timestamp'] as Timestamp?;
-                          
+
                           return _MessageBubble(
                             message: message['text'],
                             isUser: isUser,
-                            time: timestamp != null 
-                              ? '${timestamp.toDate().hour}:${timestamp.toDate().minute.toString().padLeft(2, '0')}'
-                              : '',
+                            time: timestamp != null
+                                ? '${timestamp.toDate().hour}:${timestamp.toDate().minute.toString().padLeft(2, '0')}'
+                                : '',
                           );
                         },
                       );
@@ -195,7 +198,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
@@ -259,7 +263,8 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isUser) ...[
             CircleAvatar(
@@ -297,7 +302,9 @@ class _MessageBubble extends StatelessWidget {
                         time,
                         style: TextStyle(
                           fontSize: 10,
-                          color: isUser ? Colors.white.withOpacity(0.7) : Colors.black54,
+                          color: isUser
+                              ? Colors.white.withOpacity(0.7)
+                              : Colors.black54,
                         ),
                       ),
                       if (isUser) ...[
@@ -330,4 +337,4 @@ class _MessageBubble extends StatelessWidget {
       ),
     );
   }
-} 
+}

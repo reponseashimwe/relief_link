@@ -93,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         Text(
-                          'Role: ${authProvider.userRole}',
+                          'Role: ${authProvider.userRole.name}',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                           ),
@@ -236,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     targetAmount: 200000,
                     raisedAmount: 16950,
                     daysLeft: 20,
-                    imageUrl: 'assets/images/earthquake.jpg',
+                    imageUrl: 'assets/images/earthquake.png',
                   ),
                 ],
               ),
@@ -269,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'The Great East Japan Earthquake and Tsunami',
                     category: 'Earthquake',
                     timeToRead: '5 mins read',
-                    imageUrl: 'assets/images/earthquake.jpg',
+                    imageUrl: 'assets/images/earthquake.png',
                   ),
                 ],
               ),

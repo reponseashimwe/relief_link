@@ -9,8 +9,6 @@ import 'screens/emergency/service_dashboard.dart';
 import 'screens/funds/funds_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'components/navigation/custom_bottom_nav.dart';
-import 'components/navigation/custom_app_bar.dart';
-import 'constants/app_constants.dart';
 
 class Wrapper extends StatefulWidget {
   const Wrapper({super.key});
