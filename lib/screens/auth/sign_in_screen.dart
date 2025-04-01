@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../components/buttons/custom_button.dart';
-import '../../components/form/custom_input.dart';
-import '../../constants/colors.dart';
 import '../../providers/auth_provider.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -28,14 +26,10 @@ class _SignInScreenState extends State<SignInScreen> {
 
   Future<void> _handleSignIn() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final success = await context.read<AuthProvider>().signIn(
+      await context.read<AuthProvider>().signIn(
             _emailController.text,
             _passwordController.text,
           );
-
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
     }
   }
 
@@ -246,7 +240,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  color: const Color(0xFF1A3C34), // Dark green color from the image
+                  color: const Color(
+                      0xFF1A3C34), 
                 ),
                 // Error message if sign-in fails
                 if (authProvider.error != null) ...[
@@ -263,7 +258,8 @@ class _SignInScreenState extends State<SignInScreen> {
                 const SizedBox(height: 24),
                 // Continue with Google Button
                 OutlinedButton.icon(
-                  onPressed: authProvider.isLoading ? null : _handleGoogleSignIn,
+                  onPressed:
+                      authProvider.isLoading ? null : _handleGoogleSignIn,
                   icon: Image.asset(
                     'assets/images/google_logo.png',
                     height: 24,
@@ -282,7 +278,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       horizontal: 16,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24), // More oval shape
+                      borderRadius:
+                          BorderRadius.circular(24), // More oval shape
                     ),
                     side: BorderSide(color: Colors.grey[300]!), // Grey border
                   ),
@@ -312,7 +309,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       horizontal: 16,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24), // More oval shape
+                      borderRadius:
+                          BorderRadius.circular(24), // More oval shape
                     ),
                     side: BorderSide(color: Colors.grey[300]!), // Grey border
                   ),

@@ -43,7 +43,8 @@ class AuthProvider extends ChangeNotifier {
           orElse: () => UserRole.user,
         );
       } else {
-        final userDoc = await _firestore.collection('users').doc(_user!.uid).get();
+        final userDoc =
+            await _firestore.collection('users').doc(_user!.uid).get();
         if (userDoc.exists) {
           final roleStr = userDoc.data()?['role'] as String?;
           if (roleStr != null) {
@@ -83,14 +84,16 @@ class AuthProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      
+
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       if (userCredential.user != null) {
+        _user = userCredential.user;
         await _fetchUserRole();
+        notifyListeners();
         return true;
       }
       return false;
@@ -102,19 +105,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> signUp(String name, String email, String password, {UserRole role = UserRole.user}) async {
+  Future<bool> signUp(String name, String email, String password,
+      {UserRole role = UserRole.user, EmergencyService? service}) async {
     try {
       _setLoading(true);
       _setError(null);
-      
+
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       if (userCredential.user != null) {
         await userCredential.user!.updateDisplayName(name);
-        await _saveUserToFirestore(userCredential.user!, role);
+
+        // Pass service if this is an emergency service user
+        await _saveUserToFirestore(userCredential.user!, role,
+            service: role == UserRole.emergencyService ? service : null);
+
         _userRole = role;
         await _prefs?.setString(_roleKey, role.name);
         return true;
@@ -122,7 +130,7 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'An error occurred';
-      
+
       switch (e.code) {
         case 'weak-password':
           errorMessage = 'The password provided is too weak';
@@ -134,7 +142,7 @@ class AuthProvider extends ChangeNotifier {
           errorMessage = 'Invalid email address';
           break;
       }
-      
+
       _setError(errorMessage);
       return false;
     } catch (e) {
@@ -149,12 +157,12 @@ class AuthProvider extends ChangeNotifier {
     try {
       _setLoading(true);
       _setError(null);
-      
+
       await _auth.sendPasswordResetEmail(email: email);
       return true;
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'An error occurred';
-      
+
       switch (e.code) {
         case 'invalid-email':
           errorMessage = 'Invalid email address';
@@ -163,7 +171,7 @@ class AuthProvider extends ChangeNotifier {
           errorMessage = 'No user found with this email';
           break;
       }
-      
+
       _setError(errorMessage);
       return false;
     } catch (e) {
@@ -191,8 +199,9 @@ class AuthProvider extends ChangeNotifier {
         idToken: gAuth.idToken,
       );
 
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
-      
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+
       if (userCredential.user != null) {
         await _saveUserToFirestore(userCredential.user!, UserRole.user);
       }
@@ -206,15 +215,46 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveUserToFirestore(User user, UserRole role) async {
-    await _firestore.collection('users').doc(user.uid).set({
+  Future<void> _saveUserToFirestore(User user, UserRole role,
+      {EmergencyService? service}) async {
+    // Base user data all users need
+    final userData = {
       'name': user.displayName,
       'email': user.email,
       'photoURL': user.photoURL,
       'role': role.name,
       'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-    
+    };
+
+    // Add service-specific fields if this is an emergency service user
+    if (role == UserRole.emergencyService && service != null) {
+      userData['serviceId'] = service.id;
+      userData['serviceName'] = service.name;
+      userData['serviceRole'] = service.id; // Using ID for consistency
+    }
+
+    // Save to Firestore
+    await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .set(userData, SetOptions(merge: true));
+
+    // Also create emergency_services document if needed
+    if (role == UserRole.emergencyService && service != null) {
+      await _firestore
+          .collection(Collections.emergencyServices)
+          .doc(service.id)
+          .set({
+        'userId': user.uid,
+        'name': service.name,
+        'role': service.id,
+        'description': service.description,
+        'phoneNumber': service.phoneNumber,
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+
     _userRole = role;
     if (_prefs != null) {
       await _prefs!.setString(_roleKey, role.name);
@@ -252,19 +292,24 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
-    await _updateAuthStatus(false);
-    if (_prefs != null) {
-      await _prefs!.remove(_roleKey);
+    try {
+      _setLoading(true);
+      await _auth.signOut();
+      _user = null;
+      _userRole = UserRole.user;
+      await _prefs?.remove(_roleKey);
+      notifyListeners();
+    } catch (e) {
+      _setError(e.toString());
+    } finally {
+      _setLoading(false);
     }
-    _userRole = UserRole.user;
-    notifyListeners();
   }
 
+  // ignore: unused_element
   Future<void> _updateAuthStatus(bool isAuth) async {
     if (_prefs != null) {
       await _prefs!.setBool(_authKey, isAuth);
     }
   }
-} 
+}

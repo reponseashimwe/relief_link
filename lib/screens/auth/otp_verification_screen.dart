@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../components/buttons/custom_button.dart';
-import '../../constants/colors.dart';
-
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
 
@@ -128,7 +126,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     color: Colors.grey,
                   ),
                   children: [
-                    const TextSpan(text: 'We have just sent you 4 digit code via your email '),
+                    const TextSpan(
+                        text:
+                            'We have just sent you 4 digit code via your email '),
                     TextSpan(
                       text: widget.email,
                       style: const TextStyle(
@@ -166,7 +166,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           filled: true,
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30), // Circular shape
+                            borderRadius:
+                                BorderRadius.circular(30), // Circular shape
                             borderSide: BorderSide(color: Colors.grey[300]!),
                           ),
                           enabledBorder: OutlineInputBorder(
@@ -177,7 +178,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             borderRadius: BorderRadius.circular(30),
                             borderSide: BorderSide(color: Colors.grey[300]!),
                           ),
-                          hintText: _controllers[index].text.isEmpty ? '•' : null, // Dot for empty fields
+                          hintText: _controllers[index].text.isEmpty
+                              ? '•'
+                              : null, // Dot for empty fields
                           hintStyle: const TextStyle(
                             color: Colors.grey,
                             fontSize: 24,
@@ -204,7 +207,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                color: const Color(0xFF1A3C34), // Dark green color from the image
+                color:
+                    const Color(0xFF1A3C34), // Dark green color from the image
               ),
               const SizedBox(height: 24),
               // Resend Code Link
@@ -212,7 +216,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Didn’t receive code? ",
+                    "Didn't receive code? ",
                     style: TextStyle(
                       color: Colors.grey,
                       fontSize: 14,

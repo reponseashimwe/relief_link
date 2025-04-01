@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../components/buttons/custom_button.dart';
-import '../../components/form/custom_input.dart';
-import '../../constants/colors.dart';
 import '../../providers/auth_provider.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -29,15 +27,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> _handleSignUp() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final success = await context.read<AuthProvider>().signUp(
+      await context.read<AuthProvider>().signUp(
             _nameController.text,
             _emailController.text,
             _passwordController.text,
           );
-
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
     }
   }
 
@@ -263,7 +257,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  color: const Color(0xFF1A3C34), // Dark green color from the image
+                  color: const Color(
+                      0xFF1A3C34), // Dark green color from the image
                 ),
                 // Error message if sign-up fails
                 if (authProvider.error != null) ...[
@@ -280,7 +275,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 24),
                 // Continue with Google Button
                 OutlinedButton.icon(
-                  onPressed: authProvider.isLoading ? null : _handleGoogleSignIn,
+                  onPressed:
+                      authProvider.isLoading ? null : _handleGoogleSignIn,
                   icon: Image.asset(
                     'assets/images/google_logo.png',
                     height: 24,
