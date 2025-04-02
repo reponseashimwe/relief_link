@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../screens/donations/donations_screen.dart'; // Add this import
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -32,54 +31,23 @@ class CustomBottomNav extends StatelessWidget {
           _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble,
               'Updates', context),
           _buildEmergencyButton(context),
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DonationsScreen(),
-                ),
-              );
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.favorite_border,
-                  color: currentIndex == 3
-                      ? Theme.of(context).primaryColor
-                      : Colors.grey,
-                  size: 24,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Funds',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: currentIndex == 3
-                        ? Theme.of(context).primaryColor
-                        : Colors.grey,
-                    fontWeight:
-                        currentIndex == 3 ? FontWeight.w500 : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _buildNavItem(4, Icons.person_outline, 'My Profile', context),
+          _buildNavItem(
+              3, Icons.favorite_border, Icons.favorite, 'Funds', context),
+          _buildNavItem(
+              4, Icons.person_outline, Icons.person, 'My Profile', context),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(
-      int index, IconData icon, String label, BuildContext context) {
+  Widget _buildNavItem(int index, IconData icon, IconData selectedIcon,
+      String label, BuildContext context) {
     final isSelected = index == currentIndex;
     final color = isSelected ? Theme.of(context).primaryColor : Colors.grey;
 
     return InkWell(
       onTap: () => onTap(index),
-      child: Container(
+      child: SizedBox(
         width: 70,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -93,7 +61,7 @@ class CustomBottomNav extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: color,
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
