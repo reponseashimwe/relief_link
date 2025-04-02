@@ -13,15 +13,12 @@ class SetLocationScreen extends StatefulWidget {
 }
 
 class _SetLocationScreenState extends State<SetLocationScreen> {
-  final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
-  bool _isSearching = false;
   bool _isLocationSaving = false;
   LatLng _selectedLocation = const LatLng(0, 0);
   String _selectedLocationName = '';
   Set<Marker> _markers = {};
   late GoogleMapController _mapController;
-  List<String>? _searchResults;
 
   @override
   void initState() {
@@ -32,7 +29,6 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     _mapController.dispose();
     super.dispose();
   }
@@ -92,7 +88,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
 
       setState(() {
         _selectedLocation = LatLng(position.latitude, position.longitude);
-        _selectedLocationName = 'Current location';
+        _selectedLocationName = 'Selected location';
         _isLoading = false;
       });
       
@@ -121,35 +117,6 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
-  }
-
-  Future<void> _searchLocation(String query) async {
-    if (query.isEmpty) return;
-
-    setState(() {
-      _isSearching = true;
-      _searchResults = null;
-    });
-
-    // Since we don't have direct access to geocoding, we'll use a simpler approach
-    // just for searching and setting the location name
-
-    try {
-      // This is a simplified approach - in a real app without geocoding,
-      // you might need to use a different API or service
-      setState(() {
-        _selectedLocationName = query;
-        _updateMarker();
-        _isSearching = false;
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error searching location: ${e.toString()}')),
-      );
-      setState(() {
-        _isSearching = false;
-      });
-    }
   }
 
   Future<void> _saveLocation() async {
@@ -215,7 +182,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Let's find your unforgettable event.",
+                  "Set your location on the map",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
@@ -223,107 +190,13 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  "Choose a location below to get started.",
+                  "Tap on the map to select your location",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.black54,
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Search bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search location',
-                      hintStyle: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      suffixIcon: _isSearching 
-                          ? const Padding(
-                              padding: EdgeInsets.all(14.0),
-                              child: SizedBox(
-                                width: 20, 
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            )
-                          : IconButton(
-                              icon: const Icon(
-                                Icons.clear,
-                                color: Colors.grey,
-                                size: 20,
-                              ),
-                              onPressed: () {
-                                _searchController.clear();
-                              },
-                            ),
-                    ),
-                    onSubmitted: _searchLocation,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Set Location button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Show full screen map
-                      _mapController.animateCamera(
-                        CameraUpdate.newLatLngZoom(_selectedLocation, 16),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.location_on_outlined,
-                      color: Color(0xFF1B4332),
-                      size: 20,
-                    ),
-                    label: const Text(
-                      'Set Location on Map',
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey[300]!, width: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 36),
-                
-                // Current Location section
-                const Text(
-                  'Current Location',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -390,21 +263,14 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                         
                         // Current location marker
                         Positioned(
-                          top: 120,
-                          left: 0,
-                          right: 0,
-                          child: Center(
-                            child: Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1B4332),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                              ),
+                          bottom: 16,
+                          right: 16,
+                          child: FloatingActionButton(
+                            onPressed: _getCurrentLocation,
+                            backgroundColor: Colors.white,
+                            child: const Icon(
+                              Icons.my_location,
+                              color: Color(0xFF1B4332),
                             ),
                           ),
                         ),
@@ -415,19 +281,19 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
           
           const SizedBox(height: 24),
           
-          // Use Current Location button
+          // Save button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 56,
               child: ElevatedButton(
                 onPressed: _isLocationSaving ? null : _saveLocation,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1B4332),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                   elevation: 0,
                 ),
@@ -441,7 +307,7 @@ class _SetLocationScreenState extends State<SetLocationScreen> {
                         ),
                       )
                     : const Text(
-                        'Use Current Location',
+                        'Save',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

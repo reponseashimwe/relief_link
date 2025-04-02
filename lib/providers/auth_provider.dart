@@ -134,10 +134,22 @@ class AuthProvider extends ChangeNotifier {
         
         await _fetchUserRole();
         
+        // Automatically set onboarding as completed for ALL users upon successful login
+        if (_prefs == null) {
+          _prefs = await SharedPreferences.getInstance();
+        }
+        
+        // Save to local preferences
+        await _prefs?.setBool(_onboardingCompletedKey, true);
+        
+        // Also save to Firestore
         try {
-            await setOnboardingCompleted();
+          await _firestore.collection('users').doc(_user!.uid).set({
+            'onboardingCompleted': true,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
         } catch (e) {
-          print('Error setting onboarding completed during sign in: $e');
+          print('Error updating onboarding status in Firestore: $e');
         }
         
         return true;

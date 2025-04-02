@@ -8,6 +8,9 @@ import '../../providers/theme_provider.dart';
 import 'edit_profile_screen.dart';
 import 'set_location_screen.dart';
 import 'change_password_screen.dart';
+import '../support/support_screen.dart';
+import '../support/about_screen.dart';
+import '../../components/donation/donation_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -313,130 +316,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   const SizedBox(height: 16),
                   
                   // Donation Card
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Stack(
-                            children: [
-                              Image.asset(
-                                'assets/images/donation.jpg',
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                top: 12,
-                                left: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'Floods',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.green.shade400,
-                                        Colors.green.shade200,
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 12,
-                                left: 12,
-                                child: Text(
-                                  '\$766,950',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 12,
-                                right: 12,
-                                child: Text(
-                                  '50 days left',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.5),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Rebuild Hope After Disaster',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDarkMode ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'By Wecare Health   •   Target: \$150,000',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  DonationCard(
+                    imageUrl: 'assets/images/donation.jpg',
+                    title: 'Rebuild Hope After Disaster',
+                    subtitle: 'By Wecare Health  •  Target: \$150,000',
+                    category: 'Floods',
+                    progress: 0.7,
+                    amountRaised: '\$766,950',
+                    daysLeft: '50 days left',
+                    useAssetImage: true,
+                    onTap: () {
+                      // Navigate to donation details
+                    },
                   ),
                   
                   const SizedBox(height: 24),
@@ -576,6 +467,19 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Navigate to donation screen
+        },
+        backgroundColor: const Color(0xFF2F7B40),
+        icon: const Icon(Icons.favorite),
+        label: const Text(
+          'Donate',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
     );
   }
 
@@ -690,47 +594,31 @@ class SettingsScreen extends StatelessWidget {
           
           _buildSettingSection(
             context,
-            title: 'Preferences',
-            items: [
-              SettingItem(
-                icon: Icons.dark_mode_outlined,
-                title: 'Dark Mode',
-                trailing: Switch(
-                  value: isDarkMode,
-                  onChanged: (_) => themeProvider.toggleTheme(),
-                  activeColor: const Color(0xFF2F7B40),
-                ),
-                onTap: () {},
-              ),
-              SettingItem(
-                icon: Icons.notifications_none,
-                title: 'Notifications',
-                onTap: () {},
-              ),
-              SettingItem(
-                icon: Icons.language,
-                title: 'Language',
-                onTap: () {},
-              ),
-            ],
-            isDarkMode: isDarkMode,
-          ),
-          
-          const SizedBox(height: 20),
-          
-          _buildSettingSection(
-            context,
             title: 'Support',
             items: [
               SettingItem(
                 icon: Icons.help_outline,
                 title: 'Help & Support',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SupportScreen(),
+                    ),
+                  );
+                },
               ),
               SettingItem(
                 icon: Icons.info_outline,
                 title: 'About',
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AboutScreen(),
+                    ),
+                  );
+                },
               ),
             ],
             isDarkMode: isDarkMode,

@@ -318,7 +318,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       backgroundColor: const Color(0xFF1B4332),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(28),
                       ),
                       elevation: 0,
                     ),
@@ -365,7 +365,7 @@ class _SignInScreenState extends State<SignInScreen> {
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Colors.grey[300]!),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(28),
                       ),
                     ),
                     child: Row(
