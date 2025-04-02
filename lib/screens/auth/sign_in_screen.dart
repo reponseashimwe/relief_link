@@ -82,7 +82,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 const SizedBox(height: 40),
                 // Title: "Sign in to Wecare"
                 const Text(
-                  'Sign in to Wecare',
+                  'Sign in to ReliefLink',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
