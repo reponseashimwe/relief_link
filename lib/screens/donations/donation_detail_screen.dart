@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/disaster.dart';
-import '../../components/buttons/custom_button.dart'; // Import the CustomButton
+import '../../components/buttons/custom_button.dart';
+import 'donate_screen.dart'; // Import the new screen
 
 class DonationDetailScreen extends StatelessWidget {
   final Disaster disaster;
@@ -143,10 +144,13 @@ class DonationDetailScreen extends StatelessWidget {
                   CustomButton(
                     child: const Text('Donate Now'),
                     onPressed: () {
-                      // TODO: Implement donation functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Donation functionality coming soon!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DonateScreen(
+                            disaster: disaster,
+                            organization: organization,
+                          ),
                         ),
                       );
                     },
