@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../../components/buttons/custom_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../components/onboarding/onboarding_item.dart';
 import '../../components/onboarding/pagination.dart';
 
@@ -70,14 +70,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  void _navigateToAuth() {
-    _timer?.cancel(); // Cancel auto-slide before navigation
-    Navigator.pushReplacementNamed(context, '/auth/signin');
+  Future<void> _navigateToAuth() async {
+    _timer?.cancel();
+    
+    // Save that user has seen onboarding
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+    
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/auth/signin');
+    }
+  }
+
+  void _goToPage(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -94,17 +110,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
               child: Column(
                 children: [
-                  OnboardingPagination(
-                    currentPage: _currentPage,
-                    totalPages: _onboardingData.length,
+                  GestureDetector(
+                    onTap: () {
+                      // Allow tapping on pagination to navigate
+                      int targetPage = (_currentPage + 1) % _onboardingData.length;
+                      _goToPage(targetPage);
+                    },
+                    child: OnboardingPagination(
+                      currentPage: _currentPage,
+                      totalPages: _onboardingData.length,
+                      onDotTap: _goToPage,
+                    ),
                   ),
                   const SizedBox(height: 32),
-                  CustomButton(
-                    onPressed: _navigateToAuth,
-                    child: const Text('Get Started'),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: _navigateToAuth,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1B4332),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Continue',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

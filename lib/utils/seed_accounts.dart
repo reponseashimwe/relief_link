@@ -51,7 +51,7 @@ class AccountSeeder {
       );
 
       await userCredential.user?.updateDisplayName(name);
-
+      
       // Save user data to Firestore
       await _firestore
           .collection(Collections.users)
@@ -63,6 +63,7 @@ class AccountSeeder {
         'serviceId': service.id,
         'serviceName': service.name,
         'serviceRole': service.id,
+        'emailVerified': true,  // Mark as verified in Firestore
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -81,6 +82,26 @@ class AccountSeeder {
       });
 
       debugPrint('Created emergency service: $email');
+      
+      // Special handling for test users in development - sign in and get ID token
+      // to refresh the emailVerified status (this is a workaround)
+      if (kDebugMode) {
+        try {
+          // Log them in once to get an ID token
+          await _auth.signInWithEmailAndPassword(email: email, password: password);
+          
+          // Force token refresh - this helps with emailVerified status in some cases
+          await _auth.currentUser?.getIdToken(true);
+          
+          debugPrint('Signed in seeded account to refresh token: $email');
+          
+          // Sign out afterward to return to clean state
+          await _auth.signOut();
+          debugPrint('Signed out after token refresh: $email');
+        } catch (e) {
+          debugPrint('Error during token refresh process: $e');
+        }
+      }
     } catch (e) {
       debugPrint('Error creating emergency service account for $email: $e');
     }
@@ -150,10 +171,31 @@ class AccountSeeder {
         'name': name,
         'email': email,
         'role': role.name,
+        'emailVerified': true,  // Mark as verified in Firestore
         'createdAt': FieldValue.serverTimestamp(),
       });
 
       debugPrint('Created user account for $email');
+      
+      // Special handling for test users in development - sign in and get ID token
+      // to refresh the emailVerified status (this is a workaround)
+      if (kDebugMode) {
+        try {
+          // Log them in once to get an ID token
+          await _auth.signInWithEmailAndPassword(email: email, password: password);
+          
+          // Force token refresh - this helps with emailVerified status in some cases
+          await _auth.currentUser?.getIdToken(true);
+          
+          debugPrint('Signed in seeded account to refresh token: $email');
+          
+          // Sign out afterward to return to clean state
+          await _auth.signOut();
+          debugPrint('Signed out after token refresh: $email');
+        } catch (e) {
+          debugPrint('Error during token refresh process: $e');
+        }
+      }
     } catch (e) {
       debugPrint('Error creating user account for $email: $e');
     }

@@ -14,115 +14,192 @@ class HomeScreen extends StatelessWidget {
     final user = context.watch<AuthProvider>().currentUser;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with profile and actions
-                Row(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with profile and actions
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage: user?.photoURL != null
-                          ? CachedNetworkImageProvider(user!.photoURL!)
-                          : null,
-                      child: user?.photoURL == null
-                          ? const Icon(Icons.person)
-                          : null,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[200],
+                      ),
+                      child: user?.photoURL != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: CachedNetworkImage(
+                                imageUrl: user!.photoURL!,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : const Icon(Icons.person, color: Colors.grey),
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Hi Welcome 👋',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'Hi Welcome ',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                            const Text(
+                              '👋',
+                              style: TextStyle(
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                         Text(
-                          user?.displayName ?? 'User',
+                          user?.displayName ?? 'Rep App',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
                         ),
                       ],
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: () {
-                        // TODO: Implement search
-                      },
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[100],
+                      ),
+                      child: const Icon(
+                        Icons.search,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.notifications_outlined),
-                      onPressed: () {
-                        // TODO: Implement notifications
-                      },
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[100],
+                      ),
+                      child: const Icon(
+                        Icons.notifications_none_outlined,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-                // Donation Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.lightGreen.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Together for Relief,\nStronger in Recovery',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                height: 1.3,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: () {
-                                // TODO: Implement donation
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
+              // Donation Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to donation page
+                  },
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFEDF6E5), Color(0xFFF5EAD7)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Together for Rwanda',
+                                  style: TextStyle(
+                                    color: Color(0xFF1B4332),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              child: const Text('See Donation'),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Stronger in Relief',
+                                  style: TextStyle(
+                                    color: Color(0xFF1B4332),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.yellow[100],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    'See Donations',
+                                    style: TextStyle(
+                                      color: Color(0xFF1B4332),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                      Image.asset(
-                        'assets/images/donation.jpg',
-                        height: 100,
-                      ),
-                    ],
+                        Expanded(
+                          flex: 4,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                            child: Image.asset(
+                              'assets/images/donation.jpg',
+                              fit: BoxFit.cover,
+                              height: double.infinity,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                // Disaster Information Section
-                Row(
+              // Disaster Information Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
@@ -132,266 +209,222 @@ class HomeScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Icon(
                           Icons.local_fire_department,
                           color: Colors.orange.shade700,
+                          size: 20,
                         ),
                       ],
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Implement see all
-                      },
-                      child: const Text('See All'),
+                    const Text(
+                      'See All',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1B4332),
+                      ),
                     ),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                // Time Filter
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _TimeFilterChip(
-                        label: 'Now',
-                        isSelected: true,
-                        onTap: () {},
+              // Time Filter
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1B4332),
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                      _TimeFilterChip(
-                        label: 'Last week',
-                        isSelected: false,
-                        onTap: () {},
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.notifications_none_outlined,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Now',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-                      _TimeFilterChip(
-                        label: 'Last month',
-                        isSelected: false,
-                        onTap: () {},
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            child: const Icon(
+                              Icons.history,
+                              color: Colors.black54,
+                              size: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Last week',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
 
-                const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                // Map with Disaster Location
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: const GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(40.7128, -74.0060), // New York coordinates
-                      zoom: 12,
+              // Map with Disaster Location
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: SizedBox(
+                    height: 200,
+                    child: Stack(
+                      children: [
+                        const GoogleMap(
+                          initialCameraPosition: CameraPosition(
+                            target: LatLng(40.7128, -74.0060), // New York coordinates
+                            zoom: 12,
+                          ),
+                          zoomControlsEnabled: false,
+                          mapToolbarEnabled: false,
+                          myLocationButtonEnabled: false,
+                        ),
+                        Center(
+                          child: Image.asset(
+                            'assets/images/earthquake.png', 
+                            width: 40,
+                            height: 40,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 8),
+              const SizedBox(height: 16),
 
-                // Disaster Details
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Earthquake in New York',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Row(
-                    children: [
-                      const Icon(Icons.calendar_today, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Sun, 11 June 2024',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.access_time, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '3 min ago',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.notifications_active_outlined),
-                    onPressed: () {
-                      // TODO: Implement notification toggle
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Live News Section
-                Row(
+              // Disaster Details
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Live News',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Earthquake in New York',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Sun, 11 June 2024',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '3 min ago',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Implement see all
-                      },
-                      child: const Text('See All'),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.shade300, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_active_outlined,
+                        color: Colors.black54,
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // Live News Cards
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _LiveNewsCard(
-                        icon: Icons.newspaper,
-                        views: '14K',
-                      ),
-                      _LiveNewsCard(
-                        icon: Icons.article,
-                        views: '18K',
-                      ),
-                      _LiveNewsCard(
-                        icon: Icons.feed,
-                        views: '21K',
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PostDisasterScreen(),
-            ),
-          );
-        },
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class _TimeFilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TimeFilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+      floatingActionButton: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PostDisasterScreen(),
+              ),
+            );
+          },
+          backgroundColor: const Color(0xFF1B4332),
+          foregroundColor: Colors.white,
+          child: const Icon(Icons.add),
         ),
-      ),
-    );
-  }
-}
-
-class _LiveNewsCard extends StatelessWidget {
-  final IconData icon;
-  final String views;
-
-  const _LiveNewsCard({
-    required this.icon,
-    required this.views,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 200,
-      height: 120,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Center(
-            child: Icon(
-              icon,
-              size: 48,
-              color: Colors.grey[600],
-            ),
-          ),
-          Positioned(
-            top: 8,
-            left: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.remove_red_eye,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    views,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
