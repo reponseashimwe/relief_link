@@ -29,14 +29,16 @@ class CustomButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: isOutlined
               ? Colors.white
-              : (color ?? AppColors.primary),
-          foregroundColor: isOutlined ? AppColors.primary : Colors.white,
-          side: isOutlined ? BorderSide(color: AppColors.primary) : null,
+              : (color ?? const Color(0xFF1B4332)),
+          foregroundColor: isOutlined ? const Color(0xFF1B4332) : Colors.white,
+          side: isOutlined 
+              ? const BorderSide(color: Color(0xFF1B4332)) 
+              : null,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24), // More oval shape
+            borderRadius: BorderRadius.circular(28), // More rounded shape
           ),
-          elevation: isOutlined ? 0 : 1,
+          elevation: isOutlined ? 0 : 0,
         ),
         child: isLoading
             ? const SizedBox(

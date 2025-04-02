@@ -1,68 +1,143 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/app_constants.dart';
+import 'package:flutter/foundation.dart';
 
 /// This class is used to seed initial user accounts for testing.
 /// It should only be used in development environments.
 class AccountSeeder {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
-  /// Seed emergency service accounts
-  static Future<void> seedEmergencyAccounts() async {
-    // Admin account
-    await _createUserIfNotExists(
-      email: 'admin@relieflink.com',
-      password: 'admin123',
-      name: 'Admin User',
-      role: UserRole.admin,
-    );
 
-    // Emergency service accounts
-    await _createUserIfNotExists(
-      email: 'medical@relieflink.com',
-      password: 'medical123',
-      name: 'Medical Services',
-      role: UserRole.emergencyService,
-    );
+  /// Creates a single emergency service user if it doesn't exist
+  static Future<void> _createEmergencyServiceUser({
+    required String email,
+    required String password,
+    required String name,
+    required EmergencyService service,
+  }) async {
+    try {
+      // Better way to check if user exists - check Auth first
+      try {
+        final methods = await _auth.fetchSignInMethodsForEmail(email);
+        if (methods.isNotEmpty) {
+          debugPrint(
+              'User $email already exists in Authentication, skipping creation');
+          return;
+        }
+      } catch (e) {
+        debugPrint('Error checking user in Auth: $e');
+      }
 
-    await _createUserIfNotExists(
-      email: 'police@relieflink.com',
-      password: 'police123',
-      name: 'Police Department',
-      role: UserRole.emergencyService,
-    );
+      // Also check Firestore as a secondary verification
+      final existingUser = await _firestore
+          .collection(Collections.users)
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
 
-    await _createUserIfNotExists(
-      email: 'fire@relieflink.com',
-      password: 'fire123',
-      name: 'Fire Department',
-      role: UserRole.emergencyService,
-    );
+      if (existingUser.docs.isNotEmpty) {
+        debugPrint(
+            'User $email already exists in Firestore, skipping creation');
+        return;
+      }
 
-    await _createUserIfNotExists(
-      email: 'rescue@relieflink.com',
-      password: 'rescue123',
-      name: 'Rescue Team',
-      role: UserRole.emergencyService,
-    );
+      debugPrint('Creating emergency service user: $email');
 
-    await _createUserIfNotExists(
-      email: 'hazmat@relieflink.com',
-      password: 'hazmat123',
-      name: 'HazMat Team',
-      role: UserRole.emergencyService,
-    );
+      // Create the user account
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    // Regular user account
-    await _createUserIfNotExists(
-      email: 'user@relieflink.com',
-      password: 'user123',
-      name: 'Regular User',
-      role: UserRole.user,
-    );
+      await userCredential.user?.updateDisplayName(name);
+      
+      // Save user data to Firestore
+      await _firestore
+          .collection(Collections.users)
+          .doc(userCredential.user!.uid)
+          .set({
+        'name': name,
+        'email': email,
+        'role': UserRole.emergencyService.name,
+        'serviceId': service.id,
+        'serviceName': service.name,
+        'serviceRole': service.id,
+        'emailVerified': true,  // Mark as verified in Firestore
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Create emergency service association
+      await _firestore
+          .collection(Collections.emergencyServices)
+          .doc(service.id)
+          .set({
+        'userId': userCredential.user!.uid,
+        'name': service.name,
+        'role': service.id,
+        'description': service.description,
+        'phoneNumber': service.phoneNumber,
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint('Created emergency service: $email');
+      
+      // Special handling for test users in development - sign in and get ID token
+      // to refresh the emailVerified status (this is a workaround)
+      if (kDebugMode) {
+        try {
+          // Log them in once to get an ID token
+          await _auth.signInWithEmailAndPassword(email: email, password: password);
+          
+          // Force token refresh - this helps with emailVerified status in some cases
+          await _auth.currentUser?.getIdToken(true);
+          
+          debugPrint('Signed in seeded account to refresh token: $email');
+          
+          // Sign out afterward to return to clean state
+          await _auth.signOut();
+          debugPrint('Signed out after token refresh: $email');
+        } catch (e) {
+          debugPrint('Error during token refresh process: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error creating emergency service account for $email: $e');
+    }
   }
-  
+
+  /// Seed all emergency service accounts
+  static Future<void> seedEmergencyAccounts() async {
+    try {
+      debugPrint('Starting to seed emergency accounts...');
+
+      // Create accounts for each emergency service
+      for (final service in EmergencyService.services) {
+        await _createEmergencyServiceUser(
+          email: '${service.id}@relieflink.com',
+          password: '${service.id}123',
+          name: service.name,
+          service: service,
+        );
+      }
+
+      // Create admin account
+      await _createUserIfNotExists(
+        email: 'admin@relieflink.com',
+        password: 'admin123',
+        name: 'Admin User',
+        role: UserRole.admin,
+      );
+
+      debugPrint('Successfully completed seeding all emergency accounts');
+    } catch (e) {
+      debugPrint('Error in seedEmergencyAccounts: $e');
+      rethrow;
+    }
+  }
+
+  /// Helper method to create regular users
   static Future<void> _createUserIfNotExists({
     required String email,
     required String password,
@@ -71,39 +146,62 @@ class AccountSeeder {
   }) async {
     try {
       // Check if user exists
-      final userDoc = await _firestore
-          .collection('users')
+      final existingUser = await _firestore
+          .collection(Collections.users)
           .where('email', isEqualTo: email)
           .limit(1)
           .get();
 
-      if (userDoc.docs.isEmpty) {
-        // Create new user
-        final userCredential = await _auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+      if (existingUser.docs.isNotEmpty) {
+        debugPrint('User $email already exists');
+        return;
+      }
 
-        await userCredential.user?.updateDisplayName(name);
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-        // Save user data to Firestore
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'name': name,
-          'email': email,
-          'role': role.name,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+      await userCredential.user?.updateDisplayName(name);
 
-        print('Created account for $email with role ${role.name}');
-      } else {
-        print('Account already exists for $email');
+      await _firestore
+          .collection(Collections.users)
+          .doc(userCredential.user!.uid)
+          .set({
+        'name': name,
+        'email': email,
+        'role': role.name,
+        'emailVerified': true,  // Mark as verified in Firestore
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint('Created user account for $email');
+      
+      // Special handling for test users in development - sign in and get ID token
+      // to refresh the emailVerified status (this is a workaround)
+      if (kDebugMode) {
+        try {
+          // Log them in once to get an ID token
+          await _auth.signInWithEmailAndPassword(email: email, password: password);
+          
+          // Force token refresh - this helps with emailVerified status in some cases
+          await _auth.currentUser?.getIdToken(true);
+          
+          debugPrint('Signed in seeded account to refresh token: $email');
+          
+          // Sign out afterward to return to clean state
+          await _auth.signOut();
+          debugPrint('Signed out after token refresh: $email');
+        } catch (e) {
+          debugPrint('Error during token refresh process: $e');
+        }
       }
     } catch (e) {
-      print('Error creating account for $email: $e');
+      debugPrint('Error creating user account for $email: $e');
     }
   }
 }
 
 // Example usage:
 // final seeder = AccountSeeder();
-// seeder.seedEmergencyAccounts(); 
+// seeder.seedEmergencyAccounts();

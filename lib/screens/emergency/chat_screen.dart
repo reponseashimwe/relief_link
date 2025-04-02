@@ -5,10 +5,12 @@ import '../../constants/app_constants.dart';
 
 class ChatScreen extends StatefulWidget {
   final EmergencyService service;
+  final String? chatId;
 
   const ChatScreen({
     super.key,
     required this.service,
+    this.chatId,
   });
 
   @override
@@ -39,57 +41,83 @@ class _ChatScreenState extends State<ChatScreen> {
       _isLoading = true;
     });
 
-    final userId = _auth.currentUser!.uid;
-    final serviceId = widget.service.id;
+    try {
+      final userId = _auth.currentUser!.uid;
+      final serviceId = widget.service.id;
 
-    // Create a unique chat ID by combining user and service IDs
-    _chatId = 'chat_${userId}_$serviceId';
+      // Use provided chatId if available
+      if (widget.chatId != null) {
+        _chatId = widget.chatId!;
+      } else {
+        // Create a unique chat ID by combining user and service IDs
+        _chatId = 'chat_${userId}_$serviceId';
 
-    // Check if chat already exists
-    final chatDoc = await _firestore.collection('chats').doc(_chatId).get();
+        // Check if chat already exists
+        final chatDoc = await _firestore.collection('chats').doc(_chatId).get();
 
-    if (!chatDoc.exists) {
-      // Create a new chat
-      await _firestore.collection('chats').doc(_chatId).set({
-        'userId': userId,
-        'userName': _auth.currentUser!.displayName ?? 'User',
-        'serviceId': serviceId,
-        'serviceName': widget.service.name,
-        'serviceRole': widget.service.role,
-        'createdAt': FieldValue.serverTimestamp(),
-        'lastMessage': '',
-        'lastMessageTime': FieldValue.serverTimestamp(),
-        'resolved': false,
+        if (!chatDoc.exists) {
+          // Create a new chat with explicit field values (no missing fields)
+          await _firestore.collection('chats').doc(_chatId).set({
+            'userId': userId,
+            'userName': _auth.currentUser!.displayName ?? 'User',
+            'serviceId': serviceId,
+            'serviceName': widget.service.name,
+            'serviceRole': widget.service.id,
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastMessage': '',
+            'lastMessageTime': FieldValue.serverTimestamp(),
+            'resolved': false,
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error initializing chat: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
-    final text = _messageController.text.trim();
-    _messageController.clear();
+    try {
+      final text = _messageController.text.trim();
+      _messageController.clear();
 
-    await _firestore
-        .collection('chats')
-        .doc(_chatId)
-        .collection('messages')
-        .add({
-      'text': text,
-      'senderId': _auth.currentUser!.uid,
-      'senderName': _auth.currentUser!.displayName ?? 'User',
-      'isUser': true,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+      // Get user role to determine if sender is regular user or emergency service
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
+      final userData = userDoc.data();
+      final userRole = userData?['role'] as String?;
+      final isRegularUser = userRole != 'emergencyService';
 
-    await _firestore.collection('chats').doc(_chatId).update({
-      'lastMessage': text,
-      'lastMessageTime': FieldValue.serverTimestamp(),
-    });
+      // First update the messages collection
+      await _firestore
+          .collection('chats')
+          .doc(_chatId)
+          .collection('messages')
+          .add({
+        'text': text,
+        'senderId': _auth.currentUser!.uid,
+        'senderName': _auth.currentUser!.displayName ?? 'User',
+        'isUser': isRegularUser,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      // Then update the chat document
+      await _firestore.collection('chats').doc(_chatId).update({
+        'lastMessage': text,
+        'lastMessageTime': FieldValue.serverTimestamp(),
+        'serviceId': widget.service.id,
+        'resolved': false,
+      });
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+    }
   }
 
   @override
@@ -182,12 +210,17 @@ class _ChatScreenState extends State<ChatScreen> {
                         itemCount: snapshot.data!.docs.length,
                         itemBuilder: (context, index) {
                           final message = snapshot.data!.docs[index];
-                          final isUser = message['isUser'] ?? false;
+                          final senderId = message['senderId'] as String?;
                           final timestamp = message['timestamp'] as Timestamp?;
+
+                          // Check if this message was sent by the current user
+                          final isCurrentUser =
+                              senderId == _auth.currentUser!.uid;
 
                           return _MessageBubble(
                             message: message['text'],
-                            isUser: isUser,
+                            isCurrentUser:
+                                isCurrentUser, // Pass whether it's the current user's message
                             time: timestamp != null
                                 ? '${timestamp.toDate().hour}:${timestamp.toDate().minute.toString().padLeft(2, '0')}'
                                 : '',
@@ -249,41 +282,53 @@ class _ChatScreenState extends State<ChatScreen> {
 
 class _MessageBubble extends StatelessWidget {
   final String message;
-  final bool isUser;
+  final bool isCurrentUser; // Renamed to be clearer
   final String time;
 
   const _MessageBubble({
     required this.message,
-    required this.isUser,
+    required this.isCurrentUser,
     required this.time,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              radius: 16,
-              child: Icon(
-                Icons.support_agent,
-                size: 20,
-                color: Colors.grey.shade700,
+          // Show service avatar only for messages NOT from current user
+          if (!isCurrentUser)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: CircleAvatar(
+                backgroundColor: Colors.green.shade100,
+                radius: 16,
+                child: Icon(
+                  Icons.local_hospital,
+                  size: 16,
+                  color: Colors.green.shade800,
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-          ],
+
+          // Message bubble
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser ? Colors.green : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(16),
+                color: isCurrentUser
+                    ? Colors.green.shade800
+                    : Colors.grey.shade100,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
+                  bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,48 +336,37 @@ class _MessageBubble extends StatelessWidget {
                   Text(
                     message,
                     style: TextStyle(
-                      color: isUser ? Colors.white : Colors.black,
+                      color: isCurrentUser ? Colors.white : Colors.black87,
+                      fontSize: 16,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isUser
-                              ? Colors.white.withOpacity(0.7)
-                              : Colors.black54,
-                        ),
-                      ),
-                      if (isUser) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.check,
-                          size: 12,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      ],
-                    ],
                   ),
                 ],
               ),
             ),
           ),
-          if (isUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              radius: 16,
-              child: Icon(
-                Icons.person,
-                size: 20,
-                color: Colors.grey.shade700,
-              ),
+
+          // Add time stamp and read receipts
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                if (isCurrentUser)
+                  Icon(
+                    Icons.done_all,
+                    size: 14,
+                    color: Colors.green.shade600,
+                  ),
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );

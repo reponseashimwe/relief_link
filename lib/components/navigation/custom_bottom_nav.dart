@@ -19,17 +19,18 @@ class CustomBottomNav extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(0, Icons.home, 'Home', context),
-          _buildNavItem(1, Icons.chat_bubble_outline, 'Community', context),
+          _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home', context),
+          _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble,
+              'Updates', context),
           _buildEmergencyButton(context),
           InkWell(
             onTap: () {
@@ -78,24 +79,27 @@ class CustomBottomNav extends StatelessWidget {
 
     return InkWell(
       onTap: () => onTap(index),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
+      child: Container(
+        width: 70,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : icon,
               color: color,
-              fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              size: 24,
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: color,
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -107,11 +111,11 @@ class CustomBottomNav extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: Colors.green,
+          color: const Color(0xFF2F7B40),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.green.withOpacity(0.3),
+              color: const Color(0xFF2F7B40).withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
