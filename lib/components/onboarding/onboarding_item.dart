@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/colors.dart';
 
 class OnboardingItem extends StatelessWidget {
   final String title;
@@ -15,49 +14,53 @@ class OnboardingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    
     return Column(
       children: [
-        Container(
-          height: screenHeight * 0.6,
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(300),
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(300),
-            ),
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-            ),
+        Expanded(
+          flex: 3,
+          child: Stack(
+            children: [
+              ClipPath(
+                clipper: _CustomClipPath(),
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                  ),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(
+          flex: 2,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
+            padding: const EdgeInsets.fromLTRB(24, 40, 24, 0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    height: 1.2,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Text(
                   description,
                   style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textLight,
+                    fontSize: 16,
+                    color: Colors.black54,
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -68,5 +71,45 @@ class OnboardingItem extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// Custom clipper to create the curved corners based on the image
+class _CustomClipPath extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    
+    // Start at top-left
+    path.lineTo(0, 0);
+    
+    // Line down to bottom-left with some offset before the curve begins
+    path.lineTo(0, size.height - 60);
+    
+    // Create a curved path for the bottom-left corner
+    path.quadraticBezierTo(
+      size.width * 0.15, size.height, // Control point
+      size.width * 0.4, size.height, // End point
+    );
+    
+    // Line to the point where the bottom-right curve starts
+    path.lineTo(size.width * 0.7, size.height);
+    
+    // Create a curve for the bottom-right corner
+    // This creates the effect of a large circle cutting into the right bottom corner
+    path.quadraticBezierTo(
+      size.width + 50, size.height, // Control point outside the image
+      size.width + 50, size.height * 0.7, // End point outside right edge
+    );
+    
+    // Return to top-right corner
+    path.lineTo(size.width, 0);
+    
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) {
+    return true;
   }
 } 

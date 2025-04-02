@@ -1,275 +1,574 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart' as app_provider;
 import '../../providers/theme_provider.dart';
-import '../../components/navigation/custom_app_bar.dart';
-import '../../utils/seed_accounts.dart';
+import 'edit_profile_screen.dart';
+import 'set_location_screen.dart';
+import 'change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  String _selectedCategory = 'All';
-  bool _isDeveloperMode = false;
-  int _devModeClickCount = 0;
-  bool _isLoading = false;
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  String _selectedTab = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _showProfileImageOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                'Change your picture',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildImageOptionItem(
+              icon: Icons.camera_alt_outlined,
+              title: 'Take a photo',
+              onTap: () => _getImage(ImageSource.camera),
+            ),
+            const SizedBox(height: 10),
+            _buildImageOptionItem(
+              icon: Icons.folder_outlined,
+              title: 'Choose from your file',
+              onTap: () => _getImage(ImageSource.gallery),
+            ),
+            const SizedBox(height: 10),
+            _buildImageOptionItem(
+              icon: Icons.delete_outline,
+              title: 'Delete Photo',
+              textColor: Colors.red,
+              onTap: () {
+                Navigator.pop(context);
+                // Delete photo implementation
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _getImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: source);
+    
+    if (image != null) {
+      // TODO: Implement image upload
+      Navigator.of(context).pop();
+    }
+  }
+
+  Widget _buildImageOptionItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color textColor = Colors.black87,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: textColor == Colors.red ? Colors.red : Colors.black87),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SettingsScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<app_provider.AuthProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final user = authProvider.currentUser;
+    final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Profile',
+      backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+          onPressed: () {
+            // Handle back button
+          },
+        ),
+        title: Text(
+          'Profile',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              setState(() {
-                _devModeClickCount++;
-                if (_devModeClickCount >= 7) {
-                  _isDeveloperMode = true;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Developer mode activated!'),
-                    ),
-                  );
-                }
-              });
-            },
+            icon: Icon(
+              Icons.settings_outlined,
+              color: isDarkMode ? Colors.white : Colors.black87,
+            ),
+            onPressed: _navigateToSettings,
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile header
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  if (user?.photoURL != null)
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: CachedNetworkImageProvider(
-                        user!.photoURL!,
-                      ),
-                    )
-                  else
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.grey.shade200,
-                      child: const Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.displayName ?? 'User',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user?.email ?? 'No email provided',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Text(
-                          'Role: ${authProvider.userRole.name}',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Dark/Light mode toggle
-            ListTile(
-              leading: Icon(
-                themeProvider.themeMode == ThemeMode.dark
-                    ? Icons.dark_mode
-                    : Icons.light_mode,
-              ),
-              title: Text(
-                themeProvider.themeMode == ThemeMode.dark
-                    ? 'Dark Mode'
-                    : 'Light Mode',
-              ),
-              trailing: Switch(
-                value: themeProvider.themeMode == ThemeMode.dark,
-                onChanged: (value) {
-                  themeProvider.toggleTheme();
-                },
-              ),
-            ),
-
-            // Sign out button
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                authProvider.signOut();
-              },
-            ),
-
-            if (_isDeveloperMode) ...[
-              const Divider(),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  'Developer Options',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.people),
-                title: const Text('Seed Emergency Accounts'),
-                subtitle: const Text('Create test accounts for services'),
-                onTap: () async {
-                  if (_devModeClickCount >= 7) {
-                    setState(() => _isLoading = true);
-                    try {
-                      await AccountSeeder.seedEmergencyAccounts();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Developer accounts created successfully'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error creating accounts: $e'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    } finally {
-                      setState(() => _isLoading = false);
-                    }
-                    _devModeClickCount = 0;
-                  }
-                },
-              ),
-            ],
-
-            const Divider(),
-
-            // Categories
-            Padding(
-              padding: const EdgeInsets.all(16),
+            // Profile Header
+            Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Categories',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[200],
+                          border: Border.all(
+                            color: const Color(0xFF2F7B40),
+                            width: 2,
+                          ),
+                        ),
+                        child: user?.photoURL != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(50),
+                                child: CachedNetworkImage(
+                                  imageUrl: user!.photoURL!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) => const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _showProfileImageOptions,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2F7B40),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildCategoryChip('All', _selectedCategory == 'All'),
-                        _buildCategoryChip('Donations', _selectedCategory == 'Donations'),
-                        _buildCategoryChip('Volunteer', _selectedCategory == 'Volunteer'),
-                      ],
+                  Text(
+                    user?.displayName ?? 'User Name',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user?.email ?? 'user@example.com',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
             ),
-
-            // Latest Donations
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            
+            const SizedBox(height: 24),
+            
+            // Tab selector
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
                 children: [
+                  _buildTabButton('All', isDarkMode),
+                  _buildTabButton('Donations', isDarkMode),
+                  _buildTabButton('Volunteer', isDarkMode),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Content based on selected tab
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  // Latest Donations section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Latest Donations',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('See All'),
+                      Text(
+                        'See All',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF2F7B40),
+                        ),
                       ),
                     ],
                   ),
+                  
                   const SizedBox(height: 16),
-                  const _DonationCard(
-                    title: 'Helping Hands for Karen Communities in Australia After Earthquake',
-                    organization: 'Wecare Health',
-                    targetAmount: 200000,
-                    raisedAmount: 16950,
-                    daysLeft: 20,
-                    imageUrl: 'assets/images/earthquake.png',
+                  
+                  // Donation Card
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.grey.shade800 : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Stack(
+                            children: [
+                              Image.asset(
+                                'assets/images/donation.jpg',
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                              Positioned(
+                                top: 12,
+                                left: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    'Floods',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.green.shade400,
+                                        Colors.green.shade200,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 12,
+                                left: 12,
+                                child: Text(
+                                  '\$766,950',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.5),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 12,
+                                right: 12,
+                                child: Text(
+                                  '50 days left',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.5),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Rebuild Hope After Disaster',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'By Wecare Health   •   Target: \$150,000',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ),
-
-            // Last Read
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Last Read section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Last Read',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black87,
                         ),
                       ),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('See All'),
+                      Text(
+                        'See All',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF2F7B40),
+                        ),
                       ),
                     ],
                   ),
+                  
                   const SizedBox(height: 16),
-                  const _LastReadCard(
-                    title: 'The Great East Japan Earthquake and Tsunami',
-                    category: 'Earthquake',
-                    timeToRead: '5 mins read',
-                    imageUrl: 'assets/images/earthquake.png',
+                  
+                  // Last Read Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.grey.shade800 : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            bottomLeft: Radius.circular(16),
+                          ),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            color: Colors.grey.shade200,
+                            child: Stack(
+                              children: [
+                                Image.asset(
+                                  'assets/images/earthquake.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  top: 8,
+                                  left: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Text(
+                                      'Earthquake',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Just Now',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    Text(
+                                      ' • ',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    Text(
+                                      '5 mins read',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'The Great East Japan Earthquake and Tsunami',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDarkMode ? Colors.white : Colors.black87,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -280,27 +579,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildCategoryChip(String label, bool isSelected) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
+  Widget _buildTabButton(String title, bool isDarkMode) {
+    bool isSelected = _selectedTab == title;
+    return Expanded(
+      child: GestureDetector(
         onTap: () {
           setState(() {
-            _selectedCategory = label;
+            _selectedTab = title;
           });
         },
-        borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(20),
+            color: isSelected ? const Color(0xFF2F7B40) : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
           ),
           child: Text(
-            label,
+            title,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
-              fontWeight: FontWeight.w500,
+              color: isSelected ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),
@@ -309,221 +608,271 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class _DonationCard extends StatelessWidget {
-  final String title;
-  final String organization;
-  final double targetAmount;
-  final double raisedAmount;
-  final int daysLeft;
-  final String imageUrl;
-
-  const _DonationCard({
-    required this.title,
-    required this.organization,
-    required this.targetAmount,
-    required this.raisedAmount,
-    required this.daysLeft,
-    required this.imageUrl,
-  });
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final progress = raisedAmount / targetAmount;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final authProvider = Provider.of<app_provider.AuthProvider>(context);
+    final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+    return Scaffold(
+      backgroundColor: isDarkMode ? Colors.grey.shade900 : Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Settings',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
-        ],
+        ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: const EdgeInsets.all(20),
         children: [
-          // Image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.asset(
-              imageUrl,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          _buildSettingSection(
+            context,
+            title: 'Account',
+            items: [
+              SettingItem(
+                icon: Icons.person_outline,
+                title: 'Edit Profile',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EditProfileScreen(),
+                    ),
+                  );
+                },
+              ),
+              SettingItem(
+                icon: Icons.lock_outline,
+                title: 'Change Password',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ChangePasswordScreen(),
+                    ),
+                  );
+                },
+              ),
+              SettingItem(
+                icon: Icons.location_on_outlined,
+                title: 'Set Location',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SetLocationScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+            isDarkMode: isDarkMode,
           ),
-
-          // Progress bar
+          
+          const SizedBox(height: 20),
+          
+          _buildSettingSection(
+            context,
+            title: 'Preferences',
+            items: [
+              SettingItem(
+                icon: Icons.dark_mode_outlined,
+                title: 'Dark Mode',
+                trailing: Switch(
+                  value: isDarkMode,
+                  onChanged: (_) => themeProvider.toggleTheme(),
+                  activeColor: const Color(0xFF2F7B40),
+                ),
+                onTap: () {},
+              ),
+              SettingItem(
+                icon: Icons.notifications_none,
+                title: 'Notifications',
+                onTap: () {},
+              ),
+              SettingItem(
+                icon: Icons.language,
+                title: 'Language',
+                onTap: () {},
+              ),
+            ],
+            isDarkMode: isDarkMode,
+          ),
+          
+          const SizedBox(height: 20),
+          
+          _buildSettingSection(
+            context,
+            title: 'Support',
+            items: [
+              SettingItem(
+                icon: Icons.help_outline,
+                title: 'Help & Support',
+                onTap: () {},
+              ),
+              SettingItem(
+                icon: Icons.info_outline,
+                title: 'About',
+                onTap: () {},
+              ),
+            ],
+            isDarkMode: isDarkMode,
+          ),
+          
+          const SizedBox(height: 20),
+          
           Container(
-            height: 6,
-            width: double.infinity,
-            color: Colors.grey.shade200,
-            child: Row(
-              children: [
-                Container(
-                  height: 6,
-                  width: MediaQuery.of(context).size.width * progress * 0.9, // 0.9 to account for padding
-                  color: Colors.green,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: isDarkMode ? Colors.grey.shade800 : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.logout,
+                  color: Colors.red,
+                  size: 22,
+                ),
+              ),
+              title: const Text(
+                'Sign Out',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                authProvider.signOut();
+                Navigator.pop(context);
+              },
+            ),
           ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Amount
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '\$${raisedAmount.toInt()}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                    Text(
-                      '$daysLeft days left',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Title
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 4),
-
-                // Organization and target
-                Row(
-                  children: [
-                    Text(
-                      'By $organization',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      ' • Target: \$${targetAmount.toInt()}',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          
+          const SizedBox(height: 30),
+          
+          Center(
+            child: Text(
+              'ReliefLink v1.0.0',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSettingSection(
+    BuildContext context, {
+    required String title,
+    required List<SettingItem> items,
+    required bool isDarkMode,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : Colors.black87,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.grey.shade800 : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: items.map((item) {
+              return ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2F7B40).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    color: const Color(0xFF2F7B40),
+                    size: 22,
+                  ),
+                ),
+                title: Text(
+                  item.title,
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                trailing: item.trailing ?? Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+                onTap: item.onTap,
+              );
+            }).toList(),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _LastReadCard extends StatelessWidget {
+class SettingItem {
+  final IconData icon;
   final String title;
-  final String category;
-  final String timeToRead;
-  final String imageUrl;
+  final VoidCallback onTap;
+  final Widget? trailing;
 
-  const _LastReadCard({
+  SettingItem({
+    required this.icon,
     required this.title,
-    required this.category,
-    required this.timeToRead,
-    required this.imageUrl,
+    required this.onTap,
+    this.trailing,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              imageUrl,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        category,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Just Now • $timeToRead',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 } 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,17 +9,20 @@ import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/volunteer_provider.dart';
 import 'wrapper.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/sign_up_screen.dart';
 import 'screens/auth/forgot_password_screen.dart';
+import 'screens/auth/otp_verification_screen.dart';
+import 'wrapper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'utils/seed_accounts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const bool isDevelopment = true; // Set to false for production
 
 Future<void> _initializeEmergencyAccounts() async {
   try {
-    // First check if any emergency accounts exist
     final emergencyAccounts = await FirebaseFirestore.instance
         .collection(Collections.users)
         .where('role', isEqualTo: UserRole.emergencyService.name)
@@ -38,11 +41,16 @@ Future<void> _initializeEmergencyAccounts() async {
   }
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
 
   if (isDevelopment) {
     debugPrint('Development mode: Initializing emergency accounts...');
@@ -83,7 +91,7 @@ class MyApp extends StatelessWidget {
 
           final lightTheme = baseTheme.copyWith(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF1A73E8),
+              seedColor: const Color(0xFF1B4332),
               brightness: Brightness.light,
             ),
             textTheme: baseTheme.textTheme.apply(
@@ -95,7 +103,7 @@ class MyApp extends StatelessWidget {
 
           final darkTheme = baseTheme.copyWith(
             colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF1A73E8),
+              seedColor: const Color(0xFF1B4332),
               brightness: Brightness.dark,
             ),
             textTheme: baseTheme.textTheme.apply(
@@ -113,11 +121,30 @@ class MyApp extends StatelessWidget {
             themeMode: themeProvider.themeMode,
             initialRoute: '/',
             routes: {
-              '/': (context) => const Wrapper(),
+              '/': (context) => FutureBuilder<SharedPreferences>(
+                future: SharedPreferences.getInstance(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Scaffold(
+                      body: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  final hasSeenOnboarding = snapshot.data!.getBool('has_seen_onboarding') ?? false;
+
+                  if (!hasSeenOnboarding) {
+                    return const OnboardingScreen();
+                  }
+
+                  return const Wrapper();
+                },
+              ),
               '/auth/signin': (context) => const SignInScreen(),
               '/auth/signup': (context) => const SignUpScreen(),
-              '/auth/forgot-password': (context) =>
-                  const ForgotPasswordScreen(),
+              '/auth/forgot-password': (context) => const ForgotPasswordScreen(),
+              '/auth/otp': (context) => const OtpVerificationScreen(email: ''),
             },
           );
         },
