@@ -27,6 +27,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
     final authProvider = Provider.of<app_provider.AuthProvider>(context);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: CustomAppBar(
         title: 'Emergency Call',
         actions: [
