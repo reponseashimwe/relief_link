@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/disaster.dart';
+import 'donation_detail_screen.dart'; // Import the new screen
 
 class DonationsScreen extends StatefulWidget {
   const DonationsScreen({Key? key}) : super(key: key);
@@ -154,7 +155,7 @@ class _DonationsScreenState extends State<DonationsScreen> {
                             )
                           : const GeoPoint(0, 0),
                       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ??
-                          DateTime.now(), // Convert Timestamp to DateTime
+                          DateTime.now(),
                       description:
                           data['description'] as String? ?? 'No description',
                       images: List<String>.from(data['images'] ?? []),
@@ -197,6 +198,20 @@ class _DonationsScreenState extends State<DonationsScreen> {
                         amountRaised: donationData['amountRaised'],
                         target: donationData['target'],
                         daysLeft: donationData['daysLeft'],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DonationDetailScreen(
+                                disaster: disaster,
+                                amountRaised: donationData['amountRaised'],
+                                target: donationData['target'],
+                                daysLeft: donationData['daysLeft'],
+                                organization: donationData['organization'],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );
@@ -256,6 +271,7 @@ class DonationCard extends StatelessWidget {
   final int amountRaised;
   final int target;
   final int daysLeft;
+  final VoidCallback? onTap; // Added onTap callback
 
   const DonationCard({
     required this.title,
@@ -264,6 +280,7 @@ class DonationCard extends StatelessWidget {
     required this.amountRaised,
     required this.target,
     required this.daysLeft,
+    this.onTap,
   });
 
   @override
@@ -273,74 +290,79 @@ class DonationCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
+      child: InkWell(
+        onTap: onTap, // Added onTap handler
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator()),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              ),
             ),
-            child: CachedNetworkImage(
-              imageUrl: imageUrl,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              placeholder: (context, url) =>
-                  const Center(child: CircularProgressIndicator()),
-              errorWidget: (context, url, error) => const Icon(Icons.error),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '\$${amountRaised.toString()}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '\$${amountRaised.toString()}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      '$daysLeft days left',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
+                      Text(
+                        '$daysLeft days left',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor:
+                        const AlwaysStoppedAnimation<Color>(Colors.green),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
