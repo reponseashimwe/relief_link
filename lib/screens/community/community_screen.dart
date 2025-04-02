@@ -69,20 +69,6 @@ class _CommunityScreenState extends State<CommunityScreen>
           VolunteerTab(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        selectedItemColor: const Color(0xFF1A3C34),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Community'),
-          BottomNavigationBarItem(icon: Icon(Icons.monetization_on), label: 'Funds'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'My Profile'),
-        ],
-        onTap: (index) {
-          // Handle navigation to other screens
-        },
-      ),
     );
   }
 }
