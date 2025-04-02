@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/volunteer_event.dart';
+import '../../providers/volunteer_provider.dart';
 import '../../services/volunteer_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FormJoinScreen extends StatefulWidget {
-  final VolunteerEvent event;
+  final VolunteerEvent? event;
 
-  const FormJoinScreen({Key? key, required this.event}) : super(key: key);
+  const FormJoinScreen({Key? key, this.event}) : super(key: key);
 
   @override
   State<FormJoinScreen> createState() => _FormJoinScreenState();
@@ -26,10 +28,13 @@ class _FormJoinScreenState extends State<FormJoinScreen> {
   
   bool _isLoading = false;
   bool _agreedToTerms = false;
+  VolunteerEvent? _selectedEvent;
 
   @override
   void initState() {
     super.initState();
+    _selectedEvent = widget.event;
+    
     // Add focus listeners
     _nameFocus.addListener(() {
       if (!_nameFocus.hasFocus) {
@@ -53,14 +58,12 @@ class _FormJoinScreenState extends State<FormJoinScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    // Dispose focus nodes
     _nameFocus.dispose();
     _emailFocus.dispose();
     _phoneFocus.dispose();
     super.dispose();
   }
 
-  // Add method to handle field focus changes
   void _fieldFocusChange(
     BuildContext context,
     FocusNode currentFocus,
@@ -71,7 +74,16 @@ class _FormJoinScreenState extends State<FormJoinScreen> {
   }
 
   Future<void> _submitForm() async {
-    // Unfocus any active focus before form submission
+    if (_selectedEvent == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an event first'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     
     if (!_formKey.currentState!.validate() || !_agreedToTerms) {
@@ -89,7 +101,7 @@ class _FormJoinScreenState extends State<FormJoinScreen> {
       }
 
       final success = await _volunteerService.joinVolunteerEvent(
-        eventId: widget.event.id,
+        eventId: _selectedEvent!.id,
         userId: user.uid,
         fullName: _nameController.text,
         email: _emailController.text,
@@ -130,154 +142,204 @@ class _FormJoinScreenState extends State<FormJoinScreen> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // Add tap handler to unfocus when tapping outside
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              // Unfocus before popping
               FocusScope.of(context).unfocus();
               Navigator.pop(context);
             },
           ),
           title: const Text('Join Volunteer Event'),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: Image.network(
-                        widget.event.imageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    title: Text(
-                      widget.event.title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    subtitle: Text(
-                      widget.event.location,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                  const SizedBox(height: 24.0),
-                  TextFormField(
-                    controller: _nameController,
-                    focusNode: _nameFocus,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: (_) {
-                      _fieldFocusChange(context, _nameFocus, _emailFocus);
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Full Name',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your full name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: _emailController,
-                    focusNode: _emailFocus,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: (_) {
-                      _fieldFocusChange(context, _emailFocus, _phoneFocus);
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: _phoneController,
-                    focusNode: _phoneFocus,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) {
-                      _phoneFocus.unfocus();
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your phone number';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24.0),
-                  CheckboxListTile(
-                    value: _agreedToTerms,
-                    onChanged: (value) {
-                      setState(() {
-                        _agreedToTerms = value ?? false;
-                      });
-                    },
-                    title: const Text(
-                      'I agree to volunteer for disaster relief efforts and understand the responsibilities and risks involved',
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                  const SizedBox(height: 32.0),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green[800],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+        body: Consumer<VolunteerProvider>(
+          builder: (context, volunteerProvider, child) {
+            final events = volunteerProvider.events;
+            
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_selectedEvent == null) ...[
+                        const Text(
+                          'Select an Event',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16.0),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: events.length,
+                          itemBuilder: (context, index) {
+                            final event = events[index];
+                            return ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: Image.network(
+                                  event.imageUrl,
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            )
-                          : const Text('Submit'),
-                    ),
+                              title: Text(event.title),
+                              subtitle: Text(event.location),
+                              onTap: () {
+                                setState(() {
+                                  _selectedEvent = event;
+                                });
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 24.0),
+                      ] else ...[
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
+                            child: Image.network(
+                              _selectedEvent!.imageUrl,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          title: Text(
+                            _selectedEvent!.title,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          subtitle: Text(
+                            _selectedEvent!.location,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              setState(() {
+                                _selectedEvent = null;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24.0),
+                        TextFormField(
+                          controller: _nameController,
+                          focusNode: _nameFocus,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) {
+                            _fieldFocusChange(context, _nameFocus, _emailFocus);
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Full Name',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your full name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16.0),
+                        TextFormField(
+                          controller: _emailController,
+                          focusNode: _emailFocus,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted: (_) {
+                            _fieldFocusChange(context, _emailFocus, _phoneFocus);
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16.0),
+                        TextFormField(
+                          controller: _phoneController,
+                          focusNode: _phoneFocus,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) {
+                            _phoneFocus.unfocus();
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Phone Number',
+                            border: OutlineInputBorder(),
+                            filled: true,
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your phone number';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24.0),
+                        CheckboxListTile(
+                          value: _agreedToTerms,
+                          onChanged: (value) {
+                            setState(() {
+                              _agreedToTerms = value ?? false;
+                            });
+                          },
+                          title: const Text(
+                            'I agree to volunteer for disaster relief efforts and understand the responsibilities and risks involved',
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                        ),
+                        const SizedBox(height: 32.0),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green[800],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text('Submit'),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

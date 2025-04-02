@@ -7,6 +7,7 @@ import 'package:relief_link/constants/app_constants.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/volunteer_provider.dart';
 import 'wrapper.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/sign_up_screen.dart';
@@ -68,6 +69,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => AuthProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => VolunteerProvider(),
         ),
       ],
       child: Consumer<ThemeProvider>(

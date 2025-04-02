@@ -37,6 +37,87 @@ class VolunteerService {
     }
   }
 
+  Future<String?> createVolunteerEvent({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime date,
+    required String imageUrl,
+    required int targetVolunteers,
+  }) async {
+    try {
+      final docRef = await _firestore.collection('volunteer_events').add({
+        'title': title,
+        'description': description,
+        'location': location,
+        'date': Timestamp.fromDate(date),
+        'imageUrl': imageUrl,
+        'currentVolunteers': 0,
+        'targetVolunteers': targetVolunteers,
+        'photoUrls': [],
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      return docRef.id;
+    } catch (e) {
+      print('Error creating volunteer event: $e');
+      return null;
+    }
+  }
+
+  Future<void> seedSampleEvents() async {
+    final now = DateTime.now();
+    
+    final sampleEvents = [
+      {
+        'title': 'Providing flood disaster relief in Australia',
+        'description': 'Join us in providing essential aid and support to communities affected by severe flooding in Australia. Your help can make a real difference.',
+        'location': 'Sydney, Australia',
+        'date': now,
+        'imageUrl': 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b',
+        'targetVolunteers': 50,
+      },
+      {
+        'title': 'Helping Hands Supporting Tsunami Survivors',
+        'description': 'Support survivors of the recent tsunami by providing medical aid, supplies, and reconstruction assistance.',
+        'location': 'California, CA',
+        'date': now.add(const Duration(days: 1)),
+        'imageUrl': 'https://images.unsplash.com/photo-1603393518079-71d7c59e7717',
+        'targetVolunteers': 30,
+      },
+      {
+        'title': 'Rapid Response Action for Earthquake Relief',
+        'description': 'Immediate assistance needed for earthquake victims. Help with rescue operations and emergency supplies distribution.',
+        'location': 'Mexico City, Mexico',
+        'date': now.add(const Duration(days: 2)),
+        'imageUrl': 'https://images.unsplash.com/photo-1587502537745-84b86da1204f',
+        'targetVolunteers': 40,
+      },
+      {
+        'title': 'Hurricane Recovery Support Team',
+        'description': 'Join our team helping communities rebuild after the devastating hurricane. Skills in construction and logistics are welcome.',
+        'location': 'New Orleans, LA',
+        'date': now.add(const Duration(days: 3)),
+        'imageUrl': 'https://images.unsplash.com/photo-1556767576-5ec41e3239ea',
+        'targetVolunteers': 25,
+      },
+    ];
+
+    // Check if events already exist
+    final existing = await _firestore.collection('volunteer_events').limit(1).get();
+    if (existing.docs.isEmpty) {
+      for (final event in sampleEvents) {
+        await createVolunteerEvent(
+          title: event['title'] as String,
+          description: event['description'] as String,
+          location: event['location'] as String,
+          date: event['date'] as DateTime,
+          imageUrl: event['imageUrl'] as String,
+          targetVolunteers: event['targetVolunteers'] as int,
+        );
+      }
+    }
+  }
+
   Future<bool> joinVolunteerEvent({
     required String eventId,
     required String userId,
