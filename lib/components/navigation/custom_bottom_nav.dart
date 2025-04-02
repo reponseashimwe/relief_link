@@ -31,7 +31,7 @@ class CustomBottomNav extends StatelessWidget {
           _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Community', context),
           _buildEmergencyButton(context),
           _buildNavItem(3, Icons.volunteer_activism_outlined, Icons.volunteer_activism, 'Funds', context),
-          _buildNavItem(4, Icons.person_outline, Icons.person, 'My Profile', context),
+          _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile', context),
         ],
       ),
     );

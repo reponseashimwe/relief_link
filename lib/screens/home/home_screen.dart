@@ -111,68 +111,85 @@ class HomeScreen extends StatelessWidget {
               // Donation Card
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.lightGreen[100],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 24,
-                        top: 32,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Together for Relief,',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B4332),
-                              ),
-                            ),
-                            const Text(
-                              'Stronger in Recovery',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B4332),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.yellow[200],
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'See Donation',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: Colors.black87,
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to donation page
+                  },
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFEDF6E5), Color(0xFFF5EAD7)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Together for Rwanda',
+                                  style: TextStyle(
+                                    color: Color(0xFF1B4332),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Stronger in Relief',
+                                  style: TextStyle(
+                                    color: Color(0xFF1B4332),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.yellow[100],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    'See Donations',
+                                    style: TextStyle(
+                                      color: Color(0xFF1B4332),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        top: 0,
-                        child: Image.asset(
-                          'assets/images/donation.jpg',
-                          fit: BoxFit.contain,
+                        Expanded(
+                          flex: 4,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                            child: Image.asset(
+                              'assets/images/donation.jpg',
+                              fit: BoxFit.cover,
+                              height: double.infinity,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -275,36 +292,6 @@ class HomeScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           const Text(
                             'Last week',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            child: const Icon(
-                              Icons.calendar_month_outlined,
-                              color: Colors.black54,
-                              size: 14,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Last month',
                             style: TextStyle(
                               color: Colors.black87,
                               fontWeight: FontWeight.w500,
@@ -435,6 +422,7 @@ class HomeScreen extends StatelessWidget {
             );
           },
           backgroundColor: const Color(0xFF1B4332),
+          foregroundColor: Colors.white,
           child: const Icon(Icons.add),
         ),
       ),
