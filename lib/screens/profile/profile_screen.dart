@@ -472,11 +472,13 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           // Navigate to donation screen
         },
         backgroundColor: const Color(0xFF2F7B40),
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.favorite),
         label: const Text(
           'Donate',
           style: TextStyle(
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
       ),
