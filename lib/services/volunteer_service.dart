@@ -157,11 +157,64 @@ class VolunteerService {
           'phoneNumber': phoneNumber,
           'joinedAt': FieldValue.serverTimestamp(),
         });
+        
+        // Also create a record in volunteer_registrations collection for the profile screen
+        final registrationRef = _firestore
+            .collection('volunteer_registrations')
+            .doc('${userId}_${eventId}');
+            
+        final eventData = eventDoc.data() as Map<String, dynamic>;
+        
+        transaction.set(registrationRef, {
+          'userId': userId,
+          'eventId': eventId,
+          'fullName': fullName,
+          'email': email,
+          'phoneNumber': phoneNumber,
+          'eventTitle': eventData['title'] ?? '',
+          'eventLocation': eventData['location'] ?? '',
+          'eventDate': eventData['date'],
+          'registeredAt': FieldValue.serverTimestamp(),
+        });
       });
 
       return true;
     } catch (e) {
       print('Error joining volunteer event: $e');
+      return false;
+    }
+  }
+
+  // Add a simple method to create a volunteer registration directly
+  // This is helpful for testing or initial data population
+  Future<bool> createVolunteerRegistration({
+    required String eventId,
+    required String userId,
+    required Map<String, dynamic> eventData,
+    required String fullName,
+    required String email,
+    String phoneNumber = '',
+  }) async {
+    try {
+      // Create the registration document directly
+      await _firestore
+          .collection('volunteer_registrations')
+          .doc('${userId}_${eventId}')
+          .set({
+        'userId': userId,
+        'eventId': eventId,
+        'fullName': fullName,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'eventTitle': eventData['title'] ?? '',
+        'eventLocation': eventData['location'] ?? '',
+        'eventDate': eventData['date'],
+        'registeredAt': FieldValue.serverTimestamp(),
+      });
+      
+      return true;
+    } catch (e) {
+      print('Error creating volunteer registration: $e');
       return false;
     }
   }

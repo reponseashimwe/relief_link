@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/volunteer_event.dart';
 import '../../providers/volunteer_provider.dart';
+import '../../providers/auth_provider.dart' as app_provider;
 import '../../services/volunteer_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -34,6 +35,19 @@ class _FormJoinScreenState extends State<FormJoinScreen> {
   void initState() {
     super.initState();
     _selectedEvent = widget.event;
+    
+    // Prefill user information from auth provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<app_provider.AuthProvider>(context, listen: false);
+      final user = authProvider.currentUser;
+      
+      if (user != null) {
+        setState(() {
+          _nameController.text = user.displayName ?? '';
+          _emailController.text = user.email ?? '';
+        });
+      }
+    });
     
     // Add focus listeners
     _nameFocus.addListener(() {

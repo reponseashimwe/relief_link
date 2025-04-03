@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/volunteer_event.dart';
+import '../community/form_join_screen.dart';
 
 class VolunteerEventDetailScreen extends StatelessWidget {
   final VolunteerEvent event;
@@ -131,6 +133,20 @@ class VolunteerEventDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
+                  // Registered Volunteers
+                  const Text(
+                    'Registered Volunteers',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  _buildRegisteredVolunteers(context),
+                  
+                  const SizedBox(height: 24),
+                  
                   // Description
                   const Text(
                     'About This Event',
@@ -196,6 +212,12 @@ class VolunteerEventDetailScreen extends StatelessWidget {
             onPressed: event.currentVolunteers < event.targetVolunteers
                 ? () {
                     // Register as volunteer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FormJoinScreen(event: event),
+                      ),
+                    );
                   }
                 : null,
             style: ElevatedButton.styleFrom(
@@ -220,6 +242,106 @@ class VolunteerEventDetailScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+  
+  Widget _buildRegisteredVolunteers(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+        .collection('volunteer_registrations')
+        .where('eventId', isEqualTo: event.id)
+        .orderBy('registeredAt', descending: true)
+        .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'No volunteers have registered for this event yet.',
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+        
+        // Show volunteer list
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${snapshot.data!.docs.length} volunteers',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Show all volunteers
+                  },
+                  child: Text(
+                    'See All',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 70,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  final volunteer = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                  
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.grey[300],
+                          child: Text(
+                            volunteer['fullName']?.substring(0, 1).toUpperCase() ?? 'V',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          volunteer['fullName']?.split(' ')[0] ?? 'Volunteer',
+                          style: const TextStyle(fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
