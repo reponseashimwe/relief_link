@@ -460,7 +460,7 @@ class _DisasterListScreenState extends State<DisasterListScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                       child: const Text(
-                        'View Details',
+                        'Details',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),

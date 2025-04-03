@@ -11,6 +11,7 @@ class DonationCard extends StatelessWidget {
   final String daysLeft;
   final VoidCallback onTap;
   final bool useAssetImage;
+  final bool showDonateButton;
   
   const DonationCard({
     Key? key,
@@ -23,6 +24,7 @@ class DonationCard extends StatelessWidget {
     required this.daysLeft,
     required this.onTap,
     this.useAssetImage = false,
+    this.showDonateButton = true,
   }) : super(key: key);
 
   @override
@@ -202,26 +204,28 @@ class DonationCard extends StatelessWidget {
                       color: isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: onTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1B4332),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  if (showDonateButton) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: onTap,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1B4332),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Donate Now',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                    child: const Text(
-                      'Donate Now',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
