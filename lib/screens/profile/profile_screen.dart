@@ -11,6 +11,8 @@ import 'change_password_screen.dart';
 import '../support/support_screen.dart';
 import '../support/about_screen.dart';
 import '../../components/donation/donation_card.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/fundraising_campaign.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -266,36 +268,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             
             const SizedBox(height: 24),
             
-            // Tab selector
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                children: [
-                  _buildTabButton('All', isDarkMode),
-                  _buildTabButton('Donations', isDarkMode),
-                  _buildTabButton('Volunteer', isDarkMode),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Content based on selected tab
+            // Donations section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  // Latest Donations section
+                  // Donations header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Latest Donations',
+                        'Your Donations',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -315,201 +298,144 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   
                   const SizedBox(height: 16),
                   
-                  // Donation Card
-                  DonationCard(
-                    imageUrl: 'assets/images/donation.jpg',
-                    title: 'Rebuild Hope After Disaster',
-                    subtitle: 'By Wecare Health  •  Target: \$150,000',
-                    category: 'Floods',
-                    progress: 0.7,
-                    amountRaised: '\$766,950',
-                    daysLeft: '50 days left',
-                    useAssetImage: true,
-                    onTap: () {
-                      // Navigate to donation details
-                    },
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Last Read section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Last Read',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        'See All',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF2F7B40),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Last Read Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.grey.shade800 : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(16),
-                            bottomLeft: Radius.circular(16),
-                          ),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            color: Colors.grey.shade200,
-                            child: Stack(
-                              children: [
-                                Image.asset(
-                                  'assets/images/earthquake.png',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  left: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.6),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      'Earthquake',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Just Now',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    Text(
-                                      ' • ',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    Text(
-                                      '5 mins read',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'The Great East Japan Earthquake and Tsunami',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDarkMode ? Colors.white : Colors.black87,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // User donations from Firebase
+                  _buildUserDonations(user?.uid, isDarkMode),
                 ],
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigate to donation screen
-        },
-        backgroundColor: const Color(0xFF2F7B40),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.favorite),
-        label: const Text(
-          'Donate',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
     );
   }
 
-  Widget _buildTabButton(String title, bool isDarkMode) {
-    bool isSelected = _selectedTab == title;
-    return Expanded(
-      child: GestureDetector(
+  Widget _buildUserDonations(String? userId, bool isDarkMode) {
+    if (userId == null) {
+      return DonationCard(
+        imageUrl: 'assets/images/donation.jpg',
+        title: 'Rebuild Hope After Disaster',
+        subtitle: 'By Wecare Health  •  Target: \$150,000',
+        category: 'Floods',
+        progress: 0.7,
+        amountRaised: '\$766,950',
+        daysLeft: '50 days left',
+        useAssetImage: true,
         onTap: () {
-          setState(() {
-            _selectedTab = title;
-          });
+          // Navigate to donation details
         },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF2F7B40) : Colors.transparent,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : (isDarkMode ? Colors.white : Colors.black87),
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('fundraising_campaigns')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return DonationCard(
+            imageUrl: 'assets/images/donation.jpg',
+            title: 'Rebuild Hope After Disaster',
+            subtitle: 'By Wecare Health  •  Target: \$150,000',
+            category: 'Floods',
+            progress: 0.7,
+            amountRaised: '\$766,950',
+            daysLeft: '50 days left',
+            useAssetImage: true,
+            onTap: () {},
+          );
+        }
+
+        // Process all campaigns to extract the user's donations
+        List<Map<String, dynamic>> userDonations = [];
+        
+        for (var doc in snapshot.data!.docs) {
+          final campaign = FundraisingCampaign.fromFirestore(doc);
+          
+          for (var donation in campaign.donations) {
+            if (donation.userId == userId) {
+              userDonations.add({
+                'donation': donation,
+                'campaign': campaign,
+              });
+            }
+          }
+        }
+        
+        // Sort by donation date (most recent first)
+        userDonations.sort((a, b) {
+          final donationA = a['donation'] as Donation;
+          final donationB = b['donation'] as Donation;
+          return donationB.donatedAt.compareTo(donationA.donatedAt);
+        });
+        
+        if (userDonations.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.volunteer_activism_outlined,
+                    size: 64,
+                    color: isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No donations yet',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Start supporting causes that matter to you',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-      ),
+          );
+        }
+
+        // Show all user donations
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: userDonations.length,
+          itemBuilder: (context, index) {
+            final donation = userDonations[index]['donation'] as Donation;
+            final campaign = userDonations[index]['campaign'] as FundraisingCampaign;
+            
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: DonationCard(
+                imageUrl: campaign.imageUrl,
+                title: campaign.title,
+                subtitle: 'By ${campaign.organizationName}  •  Target: \$${campaign.targetAmount.toInt()}',
+                category: campaign.category,
+                progress: campaign.currentAmount / campaign.targetAmount,
+                amountRaised: '\$${campaign.currentAmount.toInt()}',
+                daysLeft: '${campaign.daysLeft} days left',
+                useAssetImage: false,
+                onTap: () {
+                  // Navigate to donation details
+                },
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

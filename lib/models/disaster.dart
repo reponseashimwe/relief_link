@@ -12,6 +12,10 @@ class Disaster {
   final String userName;
   final DateTime createdAt;
   final bool isVerified;
+  final String type;
+  final String severity;
+  
+  String get imageUrl => images.isNotEmpty ? images[0] : '';
 
   Disaster({
     required this.id,
@@ -25,6 +29,8 @@ class Disaster {
     required this.userName,
     required this.createdAt,
     this.isVerified = false,
+    this.type = 'Other',
+    this.severity = 'Medium',
   });
 
   factory Disaster.fromMap(Map<String, dynamic> map, String id) {
@@ -40,6 +46,8 @@ class Disaster {
       userName: map['userName'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       isVerified: map['isVerified'] ?? false,
+      type: map['type'] ?? 'Other',
+      severity: map['severity'] ?? 'Medium',
     );
   }
 
@@ -55,6 +63,8 @@ class Disaster {
       'userName': userName,
       'createdAt': Timestamp.fromDate(createdAt),
       'isVerified': isVerified,
+      'type': type,
+      'severity': severity,
     };
   }
 } 

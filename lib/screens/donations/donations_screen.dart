@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/campaign_card.dart';
+import 'package:relief_link/widgets/campaign_card.dart';
 import '../../models/fundraising_campaign.dart';
 import '../../providers/auth_provider.dart';
-import '../donations/create_campaign_screen.dart';
+import 'create_campaign_screen.dart';
 
-class FundsScreen extends StatefulWidget {
-  const FundsScreen({Key? key}) : super(key: key);
+class DonationsScreen extends StatefulWidget {
+  const DonationsScreen({Key? key}) : super(key: key);
 
   @override
-  State<FundsScreen> createState() => _FundsScreenState();
+  State<DonationsScreen> createState() => _DonationsScreenState();
 }
 
-class _FundsScreenState extends State<FundsScreen> {
+class _DonationsScreenState extends State<DonationsScreen> {
   String _selectedCategory = 'All';
   final List<String> _categories = [
     'All',
@@ -25,36 +25,17 @@ class _FundsScreenState extends State<FundsScreen> {
     'Infrastructure',
     'Other'
   ];
-  
-  final ScrollController _scrollController = ScrollController();
-  final GlobalKey _campaignsKey = GlobalKey();
-  
-  void _scrollToCampaigns() {
-    if (_campaignsKey.currentContext != null) {
-      Scrollable.ensureVisible(
-        _campaignsKey.currentContext!,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final isAdmin = authProvider.isAdmin;
+    final isAdmin = authProvider.currentUser?.isAdmin ?? false;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          'Donation & Funds',
+          'Fundraising',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -87,63 +68,6 @@ class _FundsScreenState extends State<FundsScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: _scrollToCampaigns,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.volunteer_activism,
-                      color: Colors.green.shade700,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Make a Donation',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Support disaster relief efforts',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.black54,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          
           // Categories
           SizedBox(
             height: 48,
@@ -182,17 +106,7 @@ class _FundsScreenState extends State<FundsScreen> {
             ),
           ),
           
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            key: _campaignsKey,
-            child: const Text(
-              'Recent Campaigns',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          const SizedBox(height: 16),
           
           // Campaigns
           Expanded(
@@ -225,7 +139,8 @@ class _FundsScreenState extends State<FundsScreen> {
                 
                 // Convert documents to campaigns
                 final campaigns = snapshot.data!.docs.map((doc) {
-                  return FundraisingCampaign.fromFirestore(doc);
+                  final data = doc.data() as Map<String, dynamic>;
+                  return FundraisingCampaign.fromMap(data);
                 }).toList();
                 
                 // Filter by category if not "All"
@@ -256,26 +171,61 @@ class _FundsScreenState extends State<FundsScreen> {
                     ? filteredCampaigns.where((c) => !c.featured).toList()
                     : filteredCampaigns;
                 
-                return ListView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
+                return CustomScrollView(
+                  slivers: [
                     // Featured campaign
-                    if (hasFeatured) ...[
-                      CampaignCard(
-                        campaign: featuredCampaign!,
-                        featured: true,
+                    if (hasFeatured)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Featured Campaign',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              CampaignCard(
+                                campaign: featuredCampaign!,
+                                featured: true,
+                              ),
+                              const Divider(height: 32),
+                              const Text(
+                                'All Campaigns',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                        ),
                       ),
-                      const Divider(height: 24),
-                    ],
                     
                     // Regular campaigns
-                    ...regularCampaigns.map((campaign) => CampaignCard(
-                      campaign: campaign,
-                    )),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            return CampaignCard(
+                              campaign: regularCampaigns[index],
+                            );
+                          },
+                          childCount: regularCampaigns.length,
+                        ),
+                      ),
+                    ),
                     
                     // Bottom padding
-                    const SizedBox(height: 16),
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: 16),
+                    ),
                   ],
                 );
               },
