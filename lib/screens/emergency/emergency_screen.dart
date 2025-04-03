@@ -30,12 +30,6 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
       backgroundColor: Colors.white,
       appBar: CustomAppBar(
         title: 'Emergency Call',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(

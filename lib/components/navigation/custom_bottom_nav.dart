@@ -28,7 +28,7 @@ class CustomBottomNav extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home', context),
-          _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Updates', context),
+          _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Volunteer', context),
           _buildEmergencyButton(context),
           _buildNavItem(3, Icons.volunteer_activism_outlined, Icons.volunteer_activism, 'Funds', context),
           _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile', context),
