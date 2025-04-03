@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../providers/auth_provider.dart' as app_provider;
 
 class PostTab extends StatefulWidget {
@@ -18,10 +19,9 @@ class _PostTabState extends State<PostTab> {
 
     return Column(
       children: [
-        // "What's on your mind?" section
         ListTile(
           leading: const CircleAvatar(
-            backgroundImage: NetworkImage('https://via.placeholder.com/150'), // Replace with user profile picture
+            backgroundImage: NetworkImage('https://via.placeholder.com/150'),
           ),
           title: Text(user?.displayName ?? "User"),
           subtitle: const Text("What's on your mind?"),
@@ -34,7 +34,6 @@ class _PostTabState extends State<PostTab> {
           },
         ),
         const Divider(),
-        // Post feed
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -56,6 +55,9 @@ class _PostTabState extends State<PostTab> {
                 itemCount: posts.length,
                 itemBuilder: (context, index) {
                   var post = posts[index].data() as Map<String, dynamic>;
+                  String postId = posts[index].id;
+                  bool isLiked = false; // Local state; enhance later
+
                   return Card(
                     child: ListTile(
                       leading: const CircleAvatar(
@@ -80,16 +82,67 @@ class _PostTabState extends State<PostTab> {
                               ),
                             ),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              const Icon(Icons.favorite_border, size: 20),
-                              const SizedBox(width: 4),
-                              Text('${post['likes'] ?? 0}'),
-                              const SizedBox(width: 16),
-                              const Icon(Icons.comment, size: 20),
-                              const SizedBox(width: 4),
-                              Text('${post['comments']?.length ?? 0}'),
-                              const SizedBox(width: 16),
-                              const Icon(Icons.share, size: 20),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      isLiked ? Icons.favorite : Icons.favorite_border,
+                                      color: isLiked ? Colors.red : null,
+                                      size: 20,
+                                    ),
+                                    onPressed: () async {
+                                      if (user == null) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text("Please sign in to like")),
+                                        );
+                                        return;
+                                      }
+                                      await FirebaseFirestore.instance
+                                          .collection('community_posts')
+                                          .doc(postId)
+                                          .update({
+                                        'likes': FieldValue.increment(isLiked ? -1 : 1),
+                                      });
+                                      setState(() {
+                                        isLiked = !isLiked;
+                                      });
+                                    },
+                                  ),
+                                  Text('${post['likes'] ?? 0}'),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.comment, size: 20),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PostDetailPage(postId: postId),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  Text('${post['comments']?.length ?? 0}'),
+                                ],
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.share, size: 20),
+                                onPressed: () async {
+                                  await Share.share(
+                                    '${post['title'] ?? ''}\n${post['description'] ?? ''}',
+                                  );
+                                  await FirebaseFirestore.instance
+                                      .collection('community_posts')
+                                      .doc(postId)
+                                      .update({
+                                    'shares': FieldValue.increment(1),
+                                  });
+                                },
+                              ),
                             ],
                           ),
                         ],
@@ -98,7 +151,7 @@ class _PostTabState extends State<PostTab> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PostDetailPage(postId: posts[index].id),
+                            builder: (context) => PostDetailPage(postId: postId),
                           ),
                         );
                       },
@@ -168,17 +221,18 @@ class CreatePostPage extends StatelessWidget {
                   'description': descriptionController.text,
                   'userId': user.uid,
                   'userName': user.displayName ?? "Anonymous",
-                  'userRole': 'Responder', // You can fetch this from user profile
+                  'userRole': 'Responder',
                   'timestamp': FieldValue.serverTimestamp(),
-                  'type': 'Medical', // You can add a dropdown to select type
-                  'urgency': 'High', // You can add a dropdown to select urgency
+                  'type': 'Medical',
+                  'urgency': 'High',
                   'location': {
                     'lat': -1.9441,
                     'lng': 30.0619,
                     'name': 'Kigali, Sector 5',
                   },
-                  'media': ['https://via.placeholder.com/150'], // Replace with actual image upload
+                  'media': ['https://via.placeholder.com/150'],
                   'likes': 0,
+                  'shares': 0,
                   'status': 'Open',
                   'comments': [],
                 });
@@ -193,10 +247,23 @@ class CreatePostPage extends StatelessWidget {
   }
 }
 
-class PostDetailPage extends StatelessWidget {
+class PostDetailPage extends StatefulWidget {
   final String postId;
 
   const PostDetailPage({super.key, required this.postId});
+
+  @override
+  _PostDetailPageState createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends State<PostDetailPage> {
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +287,7 @@ class PostDetailPage extends StatelessWidget {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('community_posts')
-            .doc(postId)
+            .doc(widget.postId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -230,6 +297,8 @@ class PostDetailPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           var post = snapshot.data!.data() as Map<String, dynamic>;
+          bool isLiked = false; // Local state; enhance later
+
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -256,16 +325,58 @@ class PostDetailPage extends StatelessWidget {
                           ),
                         ),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          const Icon(Icons.favorite_border, size: 20),
-                          const SizedBox(width: 4),
-                          Text('${post['likes'] ?? 0}'),
-                          const SizedBox(width: 16),
-                          const Icon(Icons.comment, size: 20),
-                          const SizedBox(width: 4),
-                          Text('${post['comments']?.length ?? 0}'),
-                          const SizedBox(width: 16),
-                          const Icon(Icons.share, size: 20),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  isLiked ? Icons.favorite : Icons.favorite_border,
+                                  color: isLiked ? Colors.red : null,
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  if (user == null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("Please sign in to like")),
+                                    );
+                                    return;
+                                  }
+                                  await FirebaseFirestore.instance
+                                      .collection('community_posts')
+                                      .doc(widget.postId)
+                                      .update({
+                                    'likes': FieldValue.increment(isLiked ? -1 : 1),
+                                  });
+                                  setState(() {
+                                    isLiked = !isLiked;
+                                  });
+                                },
+                              ),
+                              Text('${post['likes'] ?? 0}'),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              const Icon(Icons.comment, size: 20),
+                              const SizedBox(width: 4),
+                              Text('${post['comments']?.length ?? 0}'),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.share, size: 20),
+                            onPressed: () async {
+                              await Share.share(
+                                '${post['title'] ?? ''}\n${post['description'] ?? ''}',
+                              );
+                              await FirebaseFirestore.instance
+                                  .collection('community_posts')
+                                  .doc(widget.postId)
+                                  .update({
+                                'shares': FieldValue.increment(1),
+                              });
+                            },
+                          ),
                         ],
                       ),
                     ],
@@ -276,20 +387,27 @@ class PostDetailPage extends StatelessWidget {
                   padding: EdgeInsets.all(8.0),
                   child: Text("Comments", style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-                ...?post['comments']?.map<Widget>((comment) => ListTile(
-                      leading: const CircleAvatar(
-                        backgroundImage: NetworkImage('https://via.placeholder.com/150'),
-                      ),
-                      title: Text(comment['userName'] ?? "Unknown User"),
-                      subtitle: Text(comment['text'] ?? ""),
-                      trailing: TextButton(
-                        onPressed: () {},
-                        child: const Text("Reply"),
-                      ),
-                    )),
+                if (post['comments'] != null && post['comments'].isNotEmpty)
+                  ...post['comments'].map<Widget>((comment) => ListTile(
+                        leading: const CircleAvatar(
+                          backgroundImage: NetworkImage('https://via.placeholder.com/150'),
+                        ),
+                        title: Text(comment['userName'] ?? "Unknown User"),
+                        subtitle: Text(comment['text'] ?? ""),
+                        trailing: TextButton(
+                          onPressed: () {}, // Add reply functionality if needed
+                          child: const Text("Reply"),
+                        ),
+                      ))
+                else
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("No comments yet"),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextField(
+                    controller: _commentController,
                     decoration: InputDecoration(
                       hintText: "Write a comment...",
                       suffixIcon: IconButton(
@@ -301,19 +419,21 @@ class PostDetailPage extends StatelessWidget {
                             );
                             return;
                           }
+                          if (_commentController.text.trim().isEmpty) return;
                           await FirebaseFirestore.instance
                               .collection('community_posts')
-                              .doc(postId)
+                              .doc(widget.postId)
                               .update({
                             'comments': FieldValue.arrayUnion([
                               {
                                 'userId': user.uid,
                                 'userName': user.displayName ?? "Anonymous",
-                                'text': "New comment", // Replace with actual text input
+                                'text': _commentController.text.trim(),
                                 'timestamp': FieldValue.serverTimestamp(),
                               }
                             ]),
                           });
+                          _commentController.clear();
                         },
                       ),
                       border: OutlineInputBorder(
