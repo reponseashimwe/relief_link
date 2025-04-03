@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../constants/colors.dart';
 import '../../models/disaster.dart';
 import '../../constants/app_constants.dart';
+import '../../widgets/map_container.dart';
 import '../disaster/post_disaster_screen.dart';
 import '../disaster/disaster_details_screen.dart';
 import '../disaster/disaster_list_screen.dart';
@@ -418,20 +419,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            child: Stack(
-                              children: [
-                                GoogleMap(
-                                  initialCameraPosition: CameraPosition(
-                                    target: _mapLocation,
-                                    zoom: 14,
-                                  ),
-                                  zoomControlsEnabled: false,
-                                  mapToolbarEnabled: false,
-                                  myLocationButtonEnabled: false,
-                                  mapType: MapType.hybrid, // Satellite view with labels
-                                  markers: _buildMarkers(),
-                                ),
-                              ],
+                            child: MapContainer(
+                              position: _mapLocation,
+                              locationName: _selectedDisaster?.location ?? "Kigali, Rwanda",
+                              mapType: MapType.hybrid,
+                              height: 200,
+                              zoomEnabled: true,
+                              title: _selectedDisaster?.title,
+                              snippet: _selectedDisaster?.location,
                             ),
                           ),
                         ),

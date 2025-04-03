@@ -11,6 +11,7 @@ import '../../services/storage_service.dart';
 import '../../providers/auth_provider.dart' as app_provider;
 import '../../models/disaster.dart';
 import '../../constants/app_constants.dart';
+import '../../widgets/map_container.dart';
 
 class PostDisasterScreen extends StatefulWidget {
   const PostDisasterScreen({super.key});
@@ -60,6 +61,47 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
+      // Check location permissions
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      // Test if location services are enabled
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are disabled. Please enable them in settings.')),
+          );
+        }
+        return;
+      }
+
+      // Check permissions
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')),
+            );
+          }
+          return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permissions are permanently denied, we cannot request permissions.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current position
       final position = await Geolocator.getCurrentPosition();
       setState(() {
         _selectedLocation = LatLng(position.latitude, position.longitude);
@@ -68,7 +110,7 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to get current location')),
+          SnackBar(content: Text('Failed to get current location: $e')),
         );
       }
     }
@@ -366,32 +408,13 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
                     
                     // Map Preview
                     if (_selectedLocation != null)
-                      Container(
+                      MapContainer(
+                        position: _selectedLocation!,
+                        locationName: _locationController.text.isNotEmpty 
+                            ? _locationController.text 
+                            : "Selected Location",
+                        mapType: MapType.hybrid,
                         height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: _selectedLocation!,
-                            zoom: 15,
-                          ),
-                          markers: {
-                            Marker(
-                              markerId: const MarkerId('selected_location'),
-                              position: _selectedLocation!,
-                            ),
-                          },
-                          mapType: MapType.hybrid, // Satellite view
-                        ),
                       ),
                     const SizedBox(height: 24),
                     

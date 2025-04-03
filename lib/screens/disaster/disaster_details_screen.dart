@@ -9,6 +9,7 @@ import '../../models/disaster.dart';
 import '../../providers/auth_provider.dart';
 import '../../constants/colors.dart';
 import '../../constants/app_constants.dart';
+import '../../widgets/map_container.dart';
 
 class DisasterDetailsScreen extends StatefulWidget {
   final Disaster disaster;
@@ -250,6 +251,34 @@ class _DisasterDetailsScreenState extends State<DisasterDetailsScreen> {
                         ),
                       ),
                     ),
+            ),
+            
+            // Map Location
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Location',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: SizedBox(
+                height: 200,
+                child: MapContainer(
+                  position: LatLng(
+                    widget.disaster.coordinates.latitude,
+                    widget.disaster.coordinates.longitude,
+                  ),
+                  title: widget.disaster.title,
+                  snippet: widget.disaster.location,
+                  locationName: widget.disaster.location,
+                ),
+              ),
             ),
             
             // Description
