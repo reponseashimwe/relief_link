@@ -28,22 +28,26 @@ class CustomBottomNav extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildNavItem(0, Icons.home_outlined, Icons.home, 'Home', context),
-          _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble, 'Updates', context),
+          _buildNavItem(1, Icons.chat_bubble_outline, Icons.chat_bubble,
+              'Updates', context),
           _buildEmergencyButton(context),
-          _buildNavItem(3, Icons.volunteer_activism_outlined, Icons.volunteer_activism, 'Funds', context),
-          _buildNavItem(4, Icons.person_outline, Icons.person, 'Profile', context),
+          _buildNavItem(
+              3, Icons.favorite_border, Icons.favorite, 'Funds', context),
+          _buildNavItem(
+              4, Icons.person_outline, Icons.person, 'My Profile', context),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, IconData selectedIcon, String label, BuildContext context) {
+  Widget _buildNavItem(int index, IconData icon, IconData selectedIcon,
+      String label, BuildContext context) {
     final isSelected = index == currentIndex;
-    final color = isSelected ? const Color(0xFF2F7B40) : Colors.grey;
-    
+    final color = isSelected ? Theme.of(context).primaryColor : Colors.grey;
+
     return InkWell(
       onTap: () => onTap(index),
-      child: Container(
+      child: SizedBox(
         width: 70,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -57,7 +61,7 @@ class CustomBottomNav extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 color: color,
                 fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
               ),
