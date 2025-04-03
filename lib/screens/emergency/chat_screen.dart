@@ -167,15 +167,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.video_call_outlined, color: Colors.black),
-            onPressed: () {},
-          ),
-          IconButton(
             icon: const Icon(Icons.phone_outlined, color: Colors.black),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
             onPressed: () {},
           ),
         ],

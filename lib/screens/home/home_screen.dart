@@ -52,6 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
           fetchedDisasters.add(Disaster.fromMap(data, doc.id));
         }
         
+        // Ensure disasters are sorted by createdAt (newest first)
+        fetchedDisasters.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        
         setState(() {
           _disasters = fetchedDisasters;
           // Set the first disaster as selected by default
@@ -76,19 +79,24 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_disasters.isEmpty) return [];
     
     final now = DateTime.now();
+    List<Disaster> filtered = [];
     
     switch (_selectedTimeFilter) {
       case 'This week':
         // This week's disasters (last 7 days)
         final weekAgo = now.subtract(const Duration(days: 7));
-        return _disasters.where((d) => d.createdAt.isAfter(weekAgo)).toList();
+        filtered = _disasters.where((d) => d.createdAt.isAfter(weekAgo)).toList();
       case 'This month':
         // This month's disasters (last 30 days)
         final monthAgo = now.subtract(const Duration(days: 30));
-        return _disasters.where((d) => d.createdAt.isAfter(monthAgo)).toList();
+        filtered = _disasters.where((d) => d.createdAt.isAfter(monthAgo)).toList();
       default:
-        return _disasters;
+        filtered = List.from(_disasters);
     }
+    
+    // Sort by createdAt (most recent first)
+    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return filtered;
   }
   
   // Get the map location - either the selected disaster or default to Kigali
@@ -159,6 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: CachedNetworkImage(
                                       imageUrl: user!.photoURL!,
                                       fit: BoxFit.cover,
+                                      httpHeaders: const {
+                                        'Access-Control-Allow-Origin': '*',
+                                        'Access-Control-Allow-Methods': 'GET',
+                                      },
+                                      errorWidget: (context, url, error) => 
+                                        const Icon(Icons.person, color: Colors.grey),
                                     ),
                                   )
                                 : const Icon(Icons.person, color: Colors.grey),
@@ -592,7 +606,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           scrollDirection: Axis.horizontal,
                           itemCount: _disasters.length,
                           itemBuilder: (context, index) {
-                            final disaster = _disasters[index];
+                            // Sort disasters by creation time (newest first)
+                            final sortedDisasters = List<Disaster>.from(_disasters)
+                              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                            final disaster = sortedDisasters[index];
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
@@ -624,6 +641,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                               width: 250,
                                               height: 180,
                                               fit: BoxFit.cover,
+                                              httpHeaders: const {
+                                                'Access-Control-Allow-Origin': '*',
+                                                'Access-Control-Allow-Methods': 'GET',
+                                              },
                                               placeholder: (context, url) => Container(
                                                 color: Colors.grey[300],
                                                 child: const Center(
