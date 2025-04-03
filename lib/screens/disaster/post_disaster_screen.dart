@@ -11,6 +11,7 @@ import '../../services/storage_service.dart';
 import '../../providers/auth_provider.dart' as app_provider;
 import '../../models/disaster.dart';
 import '../../constants/app_constants.dart';
+import '../../widgets/map_container.dart';
 
 class PostDisasterScreen extends StatefulWidget {
   const PostDisasterScreen({super.key});
@@ -26,7 +27,9 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
   final _locationController = TextEditingController();
   DisasterCategory _selectedCategory = DisasterCategory.earthquake;
   List<dynamic> _selectedImages = [];
-  LatLng? _selectedLocation;
+  
+  // Default to Kigali coordinates
+  LatLng? _selectedLocation = const LatLng(-1.9403, 30.0598);
   bool _isLoading = false;
 
   @override
@@ -58,14 +61,56 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
+      // Check location permissions
+      bool serviceEnabled;
+      LocationPermission permission;
+
+      // Test if location services are enabled
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are disabled. Please enable them in settings.')),
+          );
+        }
+        return;
+      }
+
+      // Check permissions
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')),
+            );
+          }
+          return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permissions are permanently denied, we cannot request permissions.'),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current position
       final position = await Geolocator.getCurrentPosition();
       setState(() {
         _selectedLocation = LatLng(position.latitude, position.longitude);
+        _locationController.text = "Current Location";
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to get current location')),
+          SnackBar(content: Text('Failed to get current location: $e')),
         );
       }
     }
@@ -137,41 +182,58 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
       padding: const EdgeInsets.only(right: 8),
       child: Stack(
         children: [
-          if (kIsWeb)
-            FutureBuilder<Uint8List>(
-              future: (image as XFile).readAsBytes(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Image.memory(
-                    snapshot.data!,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: kIsWeb
+                ? FutureBuilder<Uint8List>(
+                    future: (image as XFile).readAsBytes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return Image.memory(
+                          snapshot.data!,
+                          height: 100,
+                          width: 100,
+                          fit: BoxFit.cover,
+                        );
+                      }
+                      return const SizedBox(
+                        height: 100,
+                        width: 100,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    },
+                  )
+                : Image.file(
+                    File(image.path),
                     height: 100,
                     width: 100,
                     fit: BoxFit.cover,
-                  );
-                }
-                return const SizedBox(
-                  height: 100,
-                  width: 100,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              },
-            )
-          else
-            Image.file(
-              image as File,
-              height: 100,
-              width: 100,
-              fit: BoxFit.cover,
-            ),
+                  ),
+          ),
           Positioned(
-            right: 0,
-            child: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _selectedImages.removeAt(index);
-                });
-              },
+            right: -8,
+            top: -8,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                iconSize: 18,
+                icon: const Icon(Icons.close, color: Colors.red),
+                onPressed: () {
+                  setState(() {
+                    _selectedImages.removeAt(index);
+                  });
+                },
+              ),
             ),
           ),
         ],
@@ -182,11 +244,24 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // Light green background changed to white
       appBar: AppBar(
-        title: const Text('Report Disaster'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Report Disaster',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B4332)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Form(
@@ -194,86 +269,173 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title
                     TextFormField(
                       controller: _titleController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Title',
-                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
                       validator: (value) =>
                           value?.isEmpty ?? true ? 'Please enter a title' : null,
                     ),
                     const SizedBox(height: 16),
+                    
+                    // Description
                     TextFormField(
                       controller: _descriptionController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Description',
-                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
                       maxLines: 3,
                       validator: (value) =>
                           value?.isEmpty ?? true ? 'Please enter a description' : null,
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<DisasterCategory>(
-                      value: _selectedCategory,
-                      decoration: const InputDecoration(
-                        labelText: 'Category',
-                        border: OutlineInputBorder(),
+                    
+                    // Category
+                    const Text(
+                      'Category',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black54,
                       ),
-                      items: DisasterCategory.values
-                          .map((category) => DropdownMenuItem(
-                                value: category,
-                                child: Text(category.label),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _selectedCategory = value);
-                        }
-                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonFormField<DisasterCategory>(
+                        value: _selectedCategory,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                        items: DisasterCategory.values
+                            .map((category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(category.label),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedCategory = value);
+                          }
+                        },
+                        icon: const Icon(Icons.keyboard_arrow_down),
+                      ),
                     ),
                     const SizedBox(height: 16),
+                    
+                    // Location
                     TextFormField(
                       controller: _locationController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Location',
-                        border: OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
                       validator: (value) =>
                           value?.isEmpty ?? true ? 'Please enter a location' : null,
                     ),
                     const SizedBox(height: 16),
-                    if (_selectedLocation != null)
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: _selectedLocation!,
-                            zoom: 15,
-                          ),
-                          markers: {
-                            Marker(
-                              markerId: const MarkerId('selected_location'),
-                              position: _selectedLocation!,
-                            ),
-                          },
-                        ),
-                      ),
-                    const SizedBox(height: 16),
+                    
+                    // Use Current Location Button
                     ElevatedButton.icon(
                       onPressed: _getCurrentLocation,
-                      icon: const Icon(Icons.location_on),
+                      icon: const Icon(Icons.location_on, color: Color(0xFF1B4332)),
                       label: const Text('Use Current Location'),
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48),
+                        foregroundColor: const Color(0xFF1B4332),
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Map Preview
+                    if (_selectedLocation != null)
+                      MapContainer(
+                        position: _selectedLocation!,
+                        locationName: _locationController.text.isNotEmpty 
+                            ? _locationController.text 
+                            : "Selected Location",
+                        mapType: MapType.hybrid,
+                        height: 200,
+                      ),
+                    const SizedBox(height: 24),
+                    
+                    // Add Images Button
+                    ElevatedButton.icon(
+                      onPressed: _pickImages,
+                      icon: const Icon(Icons.photo_library, color: Color(0xFF1B4332)),
+                      label: const Text('Add Images'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: const Color(0xFF1B4332),
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 0,
                       ),
                     ),
                     const SizedBox(height: 16),
+                    
+                    // Image Previews
                     if (_selectedImages.isNotEmpty)
                       SizedBox(
                         height: 100,
@@ -283,25 +445,29 @@ class _PostDisasterScreenState extends State<PostDisasterScreen> {
                           itemBuilder: (context, index) => _buildImagePreview(_selectedImages[index], index),
                         ),
                       ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _pickImages,
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('Add Images'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48),
-                      ),
-                    ),
                     const SizedBox(height: 24),
+                    
+                    // Submit Button
                     ElevatedButton(
                       onPressed: _submitDisaster,
                       style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 48),
-                        backgroundColor: Colors.green,
+                        backgroundColor: const Color(0xFF4CAF50),
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        elevation: 0,
                       ),
-                      child: const Text('Submit Report'),
+                      child: const Text(
+                        'Submit Report',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
