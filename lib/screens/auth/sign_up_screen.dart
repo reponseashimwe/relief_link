@@ -375,7 +375,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'Or continue with',
+                        'or',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
