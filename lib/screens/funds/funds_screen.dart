@@ -265,6 +265,7 @@ class _FundsScreenState extends State<FundsScreen> {
                       CampaignCard(
                         campaign: featuredCampaign!,
                         featured: true,
+                        showDonateButton: true,
                       ),
                       const Divider(height: 24),
                     ],
@@ -272,6 +273,7 @@ class _FundsScreenState extends State<FundsScreen> {
                     // Regular campaigns
                     ...regularCampaigns.map((campaign) => CampaignCard(
                       campaign: campaign,
+                      showDonateButton: true,
                     )),
                     
                     // Bottom padding

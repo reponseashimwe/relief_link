@@ -215,6 +215,7 @@ class _DonationsScreenState extends State<DonationsScreen> {
                           (context, index) {
                             return CampaignCard(
                               campaign: regularCampaigns[index],
+                              showDonateButton: true,
                             );
                           },
                           childCount: regularCampaigns.length,

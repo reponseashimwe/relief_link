@@ -8,6 +8,7 @@ class CampaignCard extends StatelessWidget {
   final bool featured;
   final double? width;
   final double? height;
+  final bool showDonateButton;
   
   const CampaignCard({
     Key? key,
@@ -15,6 +16,7 @@ class CampaignCard extends StatelessWidget {
     this.featured = false,
     this.width,
     this.height,
+    this.showDonateButton = true,
   }) : super(key: key);
 
   @override
@@ -225,6 +227,38 @@ class CampaignCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  
+                  // Donate Button
+                  if (showDonateButton) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DonationDetailScreen(campaign: campaign),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2F7B40),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Donate Now',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
