@@ -4,7 +4,7 @@ Relief Link is a comprehensive disaster management and humanitarian aid applicat
 
 ## Download
 
-Download the latest APK version here: [ReliefLink APK](https://drive.google.com/file/d/1eJhKGb2Vjgp1LFg3YQ_5ZmXvLmVWcP8b/view?usp=sharing)
+Download the latest APK version here: [ReliefLink APK](https://drive.google.com/drive/folders/1hwPyT-9O698s-pKVJhRVqQM2QCMK9BN4?usp=drive_link)
 
 ## Features
 
