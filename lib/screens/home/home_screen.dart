@@ -25,36 +25,36 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String _selectedTimeFilter = 'This week';
   Disaster? _selectedDisaster;
-  
+
   // Default to Kigali coordinates
   final LatLng _kigaliLocation = const LatLng(-1.9403, 30.0598);
-  
+
   @override
   void initState() {
     super.initState();
     _fetchDisasters();
   }
-  
+
   Future<void> _fetchDisasters() async {
     setState(() => _isLoading = true);
-    
+
     try {
       // Get disasters from Firebase
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection(Collections.disasters)
           .orderBy('createdAt', descending: true)
           .get();
-      
+
       if (snapshot.docs.isNotEmpty) {
         List<Disaster> fetchedDisasters = [];
         for (var doc in snapshot.docs) {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
           fetchedDisasters.add(Disaster.fromMap(data, doc.id));
         }
-        
+
         // Ensure disasters are sorted by createdAt (newest first)
         fetchedDisasters.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        
+
         setState(() {
           _disasters = fetchedDisasters;
           // Set the first disaster as selected by default
@@ -73,43 +73,43 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
-  
+
   // Filter disasters based on selected time filter
   List<Disaster> get filteredDisasters {
     if (_disasters.isEmpty) return [];
-    
+
     final now = DateTime.now();
     List<Disaster> filtered = [];
-    
+
     switch (_selectedTimeFilter) {
       case 'This week':
         // This week's disasters (last 7 days)
         final weekAgo = now.subtract(const Duration(days: 7));
-        filtered = _disasters.where((d) => d.createdAt.isAfter(weekAgo)).toList();
+        filtered =
+            _disasters.where((d) => d.createdAt.isAfter(weekAgo)).toList();
       case 'This month':
         // This month's disasters (last 30 days)
         final monthAgo = now.subtract(const Duration(days: 30));
-        filtered = _disasters.where((d) => d.createdAt.isAfter(monthAgo)).toList();
+        filtered =
+            _disasters.where((d) => d.createdAt.isAfter(monthAgo)).toList();
       default:
         filtered = List.from(_disasters);
     }
-    
+
     // Sort by createdAt (most recent first)
     filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return filtered;
   }
-  
+
   // Get the map location - either the selected disaster or default to Kigali
   LatLng get _mapLocation {
     if (_selectedDisaster != null) {
-      return LatLng(
-        _selectedDisaster!.coordinates.latitude, 
-        _selectedDisaster!.coordinates.longitude
-      );
+      return LatLng(_selectedDisaster!.coordinates.latitude,
+          _selectedDisaster!.coordinates.longitude);
     }
     return _kigaliLocation;
   }
-  
+
   // Format the time difference for display
   String _getTimeAgo(DateTime dateTime) {
     final difference = DateTime.now().difference(dateTime);
@@ -123,18 +123,36 @@ class _HomeScreenState extends State<HomeScreen> {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
   }
-  
+
   // Format the date for display
   String _formatDate(DateTime date) {
-    final List<String> weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final List<String> months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    final List<String> weekdays = [
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun'
     ];
-    
+    final List<String> months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
     return '${weekdays[date.weekday - 1]}, ${date.day} ${months[date.month - 1]} ${date.year}';
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
@@ -142,7 +160,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B4332)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF1B4332)))
           : SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -151,7 +170,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Header with profile and actions
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       child: Row(
                         children: [
                           Container(
@@ -171,8 +191,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         'Access-Control-Allow-Origin': '*',
                                         'Access-Control-Allow-Methods': 'GET',
                                       },
-                                      errorWidget: (context, url, error) => 
-                                        const Icon(Icons.person, color: Colors.grey),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(Icons.person,
+                                              color: Colors.grey),
                                     ),
                                   )
                                 : const Icon(Icons.person, color: Colors.grey),
@@ -266,7 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 20),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text(
@@ -292,7 +314,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.yellow[100],
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                         ),
                                         child: const Text(
                                           'See Donations',
@@ -358,7 +381,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const DisasterListScreen(),
+                                  builder: (context) =>
+                                      const DisasterListScreen(),
                                 ),
                               );
                             },
@@ -381,7 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
                         children: [
-                          _buildTimeFilterButton('This week', Icons.notifications_none_outlined),
+                          _buildTimeFilterButton(
+                              'This week', Icons.notifications_none_outlined),
                           const SizedBox(width: 12),
                           _buildTimeFilterButton('This month', Icons.history),
                         ],
@@ -417,7 +442,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
 
                     // Map with Disaster Location
-                    if (filteredDisasters.isNotEmpty || _selectedDisaster != null)
+                    if (filteredDisasters.isNotEmpty ||
+                        _selectedDisaster != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: ClipRRect(
@@ -435,7 +461,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: MapContainer(
                               position: _mapLocation,
-                              locationName: _selectedDisaster?.location ?? "Kigali, Rwanda",
+                              locationName: _selectedDisaster?.location ??
+                                  "Kigali, Rwanda",
                               mapType: MapType.hybrid,
                               height: 200,
                               zoomEnabled: true,
@@ -471,7 +498,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         _selectedDisaster!.title,
@@ -490,7 +518,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            _formatDate(_selectedDisaster!.createdAt),
+                                            _formatDate(
+                                                _selectedDisaster!.createdAt),
                                             style: const TextStyle(
                                               color: Colors.grey,
                                               fontSize: 12,
@@ -504,7 +533,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            _getTimeAgo(_selectedDisaster!.createdAt),
+                                            _getTimeAgo(
+                                                _selectedDisaster!.createdAt),
                                             style: const TextStyle(
                                               color: Colors.grey,
                                               fontSize: 12,
@@ -538,7 +568,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => DisasterDetailsScreen(disaster: _selectedDisaster!),
+                                        builder: (context) =>
+                                            DisasterDetailsScreen(
+                                                disaster: _selectedDisaster!),
                                       ),
                                     );
                                   },
@@ -548,7 +580,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                                   ),
                                   child: const Text('Details'),
                                 ),
@@ -557,9 +590,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Live News Section - Shows all disasters
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -579,7 +612,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const DisasterListScreen(),
+                                  builder: (context) =>
+                                      const DisasterListScreen(),
                                 ),
                               );
                             },
@@ -594,9 +628,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Still Disasters Cards - Horizontal scroll
                     if (_disasters.isNotEmpty)
                       SizedBox(
@@ -607,20 +641,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemCount: _disasters.length,
                           itemBuilder: (context, index) {
                             // Sort disasters by creation time (newest first)
-                            final sortedDisasters = List<Disaster>.from(_disasters)
-                              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                            final sortedDisasters = List<Disaster>.from(
+                                _disasters)
+                              ..sort(
+                                  (a, b) => b.createdAt.compareTo(a.createdAt));
                             final disaster = sortedDisasters[index];
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
                                   _selectedDisaster = disaster;
                                 });
-                                
+
                                 // Navigate to disaster details
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => DisasterDetailsScreen(disaster: disaster),
+                                    builder: (context) => DisasterDetailsScreen(
+                                        disaster: disaster),
                                   ),
                                 );
                               },
@@ -642,16 +679,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                               height: 180,
                                               fit: BoxFit.cover,
                                               httpHeaders: const {
-                                                'Access-Control-Allow-Origin': '*',
-                                                'Access-Control-Allow-Methods': 'GET',
+                                                'Access-Control-Allow-Origin':
+                                                    '*',
+                                                'Access-Control-Allow-Methods':
+                                                    'GET',
                                               },
-                                              placeholder: (context, url) => Container(
+                                              placeholder: (context, url) =>
+                                                  Container(
                                                 color: Colors.grey[300],
                                                 child: const Center(
-                                                  child: CircularProgressIndicator(),
+                                                  child:
+                                                      CircularProgressIndicator(),
                                                 ),
                                               ),
-                                              errorWidget: (context, url, error) => Container(
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      Container(
                                                 color: Colors.grey[300],
                                                 child: const Icon(Icons.error),
                                               ),
@@ -683,7 +726,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       left: 12,
                                       right: 12,
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             disaster.title,
@@ -699,16 +743,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Row(
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.symmetric(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
                                                   horizontal: 8,
                                                   vertical: 4,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: _getCategoryColor(disaster.category),
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  color: _getCategoryColor(
+                                                      disaster.category),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                 ),
                                                 child: Text(
-                                                  disaster.category.toUpperCase(),
+                                                  disaster.category
+                                                      .toUpperCase(),
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 10,
@@ -718,13 +766,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                               ),
                                               const SizedBox(width: 8),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
                                                   horizontal: 8,
                                                   vertical: 4,
                                                 ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.red,
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                 ),
                                                 child: Text(
                                                   disaster.location,
@@ -734,7 +784,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
@@ -749,7 +800,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                         ),
                       ),
-                    
+
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -773,11 +824,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-  
+
   // Build markers for the map based on filtered disasters
   Set<Marker> _buildMarkers() {
     Set<Marker> markers = {};
-    
+
     // Add markers for filtered disasters
     for (var disaster in filteredDisasters) {
       markers.add(
@@ -799,7 +850,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    
+
     // If no markers but we have a selected disaster, show that
     if (markers.isEmpty && _selectedDisaster != null) {
       markers.add(
@@ -816,7 +867,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    
+
     // If still no markers, add one for Kigali
     if (markers.isEmpty) {
       markers.add(
@@ -830,10 +881,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    
+
     return markers;
   }
-  
+
   // Get color based on disaster category
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
@@ -851,10 +902,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return Colors.grey;
     }
   }
-  
+
   Widget _buildTimeFilterButton(String title, IconData iconData) {
     final bool isSelected = _selectedTimeFilter == title;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {

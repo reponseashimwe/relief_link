@@ -90,7 +90,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.indigo.shade900,
+        color: Colors.green,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -220,7 +220,7 @@ class _EmergencyServiceCard extends StatelessWidget {
             Icon(
               service.icon,
               size: 48,
-              color: Theme.of(context).primaryColor,
+              color: Color(0xFF1B4332),
             ),
             const SizedBox(height: 12),
             Text(
